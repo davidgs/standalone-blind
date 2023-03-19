@@ -197,7 +197,7 @@ export default function PersonForm({
 
   return (
     <>
-      <Modal show={show} onHide={handleCancel}>
+      <Modal show={show} onHide={handleCancel} size="xl">
         <Modal.Header closeButton>
           <Modal.Title>
             {newPerson ? "Add " : "Edit "}
