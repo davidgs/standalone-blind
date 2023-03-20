@@ -17,19 +17,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/electron-react-boilerplate/electron-react-boilerplate.git"
+    "url": "git+https://github.com/davidgs/standalone-blind.git"
   },
   "license": "MIT",
   "author": {
     "name": "David G. Simmons",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://electron-react-boilerplate.js.org"
+    "email": "davidgs@davidgs.com",
+    "url": "https://davidgs.com"
   },
   "contributors": [
     {
-      "name": "Amila Welihinda",
-      "email": "amilajack@gmail.com",
-      "url": "https://github.com/amilajack"
+      "name": "David G. Simmons",
+      "email": "davidgs@davidgs.com",
+      "url": "https://github.com/davidgs"
     }
   ],
   "main": "./src/main/main.ts",
@@ -237,9 +237,6 @@
       "owner": "davidgs",
       "repo": "standalone-blind"
     }
-  },
-  "collective": {
-    "url": "https://davidgs.com"
   },
   "devEngines": {
     "node": ">=14.x",
