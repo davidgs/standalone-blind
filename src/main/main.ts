@@ -65,7 +65,7 @@ const createWindow = async () => {
   };
 
   const options = {
-    applicationName: 'Blind Ministry Router',
+    applicationName: 'Blind Ministry Routing',
     applicationVersion: '1.0.1',
     copyright: '© 2023',
     version: 'b10',

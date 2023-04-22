@@ -34,7 +34,7 @@ export default function Nav({
         <Col sm={1}></Col>
         <Col sm={2}>
           <OverlayTrigger
-            placement="auto"
+            placement="top"
             overlay={<Tooltip id="tooltip-disabled">Add a new driver.</Tooltip>}
           >
             <Button
@@ -60,7 +60,7 @@ export default function Nav({
         <Col sm={2}></Col>
         <Col sm={2}>
           <OverlayTrigger
-            placement="auto"
+            placement="top"
             overlay={
               <Tooltip id="tooltip-disabled">Add a new attendee.</Tooltip>
             }
@@ -90,6 +90,7 @@ export default function Nav({
       <Row>&nbsp;</Row>
       <PersonForm
         person={null}
+        people={addType === 'Driver' ? drivers : attendees}
         type={addType}
         addPersonCallback={addPerson}
         showMe={showForm}

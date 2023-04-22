@@ -31,7 +31,7 @@ export interface IRider {
   state: string;
   zip: string;
   _id: string;
-  driver: IDriver;
+  driver: string;
 }
 
 export interface Iplace {

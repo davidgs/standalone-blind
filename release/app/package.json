@@ -1,5 +1,6 @@
 {
   "name": "blind-ministry",
+  "productName": "Blind Ministry Routing",
   "version": "1.0.1",
   "description": "Routing App for Blind Ministry",
   "license": "MIT",

@@ -42,7 +42,7 @@ export default function SelectButton({
   return (
     <div className="App">
       <OverlayTrigger
-        placement="auto"
+        placement="top"
         overlay={
           <Tooltip id="tooltip-disabled">
             Add a new {buttonType} to the map of available {buttonType}s.

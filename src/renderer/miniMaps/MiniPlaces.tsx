@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { MarkerF } from "@react-google-maps/api";
-import { IDriver, IRider } from "./types";
-import Info from "./Info";
+import { IDriver, IRider } from "../types";
+import MiniInfo from "./MiniInfo";
 
-export default function PlaceInfo({
+export default function MiniPlaceInfo({
   markerPlaces,
   type,
   drivers,
@@ -47,12 +47,12 @@ export default function PlaceInfo({
     <>
       {myPlaces ? myPlaces.map((marker) => (
         <MarkerF
-          key={`${marker.location.lat * marker.location.lng}`}
+          key={`${marker?.location.lat * marker?.location.lng}`}
           position={{
-            lat: marker.location.lat,
-            lng: marker.location.lng,
+            lat: marker?.location.lat,
+            lng: marker?.location.lng,
           }}
-          title={marker.name}
+          title={marker?.name}
           animation={window.google.maps.Animation.DROP}
           onClick={() => {
             setSelected(marker);
@@ -63,7 +63,7 @@ export default function PlaceInfo({
         />
       )) : null}
       {selected ? (
-        <Info
+        <MiniInfo
           inf={selected}
           drivers={myDrivers}
           callback={setDriver}

@@ -1,32 +1,43 @@
-import { useEffect, useState } from "react";
+import { SyntheticEvent, useEffect, useState } from "react";
 import { Modal, Form, Button, Col, Row } from "react-bootstrap";
 import { IDriver, IRider } from "./types";
 import PhoneInput from "./components/PhoneInput";
+import { AddPerson, UpdatePerson } from "./data/dataAccess";
 import axios from "axios";
+import HelpTxt from "./components/HelpTxt";
 // import AddressField from "./components/AddressField";
 import "./style.css";
+import DireWarning from "./components/DireWarning";
 
 export default function PersonForm({
   person,
+  people,
   type,
   addPersonCallback,
   showMe,
 }: {
   person: IRider | IDriver | null;
+  people: IRider[] | IDriver[];
   type: string;
   addPersonCallback: (upPerson: IRider | IDriver | null, type: string) => void;
   showMe: boolean;
 }): JSX.Element {
   const [thisPerson, setThisPerson] = useState<IRider | IDriver | null>(person);
+  const thesePeople = people;
   const [newPerson, setNewPerson] = useState<boolean>(true);
   const [personType, setType] = useState<string>(type);
   const [show, setShow] = useState<boolean>(showMe);
+  const [warning, setWarning] = useState<string>("");
+  const [duplicatePerson, setDuplicatePerson] = useState<IRider | IDriver | null>(null);
+  const [showDireWarning, setShowDireWarning] = useState<boolean>(false);
   const [validated, setValidated] = useState(false);
+  const [nameValid, setNameValid] = useState(true);
   const [addrValid, setAddrValid] = useState(true);
   const [cityValid, setCityValid] = useState(true);
   const [emailValid, setEmailValid] = useState(true);
   const [stateValid, setStateValid] = useState(true);
   const [zipValid, setZipValid] = useState(true);
+  const dbPrefix = ''
 
   const patterns = {
     email: /^([a-z\d\.-]+)@([a-z\d-]+)\.([a-z]{2,8})(\.[a-z]{2,8})?$/,
@@ -34,6 +45,77 @@ export default function PersonForm({
     zip: /^\d{5}$/,
     address: /^\d+\s[A-z]+\s[A-z]+/,
     phone: /^\(\d{3}\) \d{3}-\d{4}/,
+    name: /^([A-Za-z]+ [A-Za-z]+)/,
+  };
+
+  console.log(`Validated: ${validated}`);
+
+  const handleValidate = (event: SyntheticEvent) => {
+    const target = event.target as HTMLInputElement;
+    const value = target.value as string;
+    const name = target.name as string;
+    event.preventDefault();
+      event.stopPropagation();
+    console.log(`handleValidate: ${name} = ${value}`);
+    switch (name) {
+      case 'name':
+        const n = patterns.name.test(value);
+        n ? target.className = 'form-control valid' :
+                        target.className = 'form-control invalid';
+        setNameValid(n);
+        setValidated(!n);
+        return;
+      case 'email':
+        const f = patterns.email.test(value);
+        f ? target.className = 'form-control valid' :
+                        target.className = 'form-control invalid';
+
+        setEmailValid(f);
+        return;
+      case 'address':
+        const a = patterns.address.test(value);
+        a ? target.className = 'form-control valid' :
+                        target.className = 'form-control invalid';
+        setAddrValid(a);
+        return;
+      case 'city':
+        const c = value.length > 2;
+        c ? target.className = 'form-control valid' :
+                        target.className = 'form-control invalid';
+                        setCityValid(c);
+        return;
+      case 'state':
+        const s = patterns.state.test(value.toUpperCase());
+        s ? target.className = 'form-control valid' :
+                        target.className = 'form-control invalid';
+        setStateValid(s);
+        return;
+      case 'zipCode':
+        const z = patterns.zip.test(value);
+        z ? target.className = 'form-control valid' :
+                        target.className = 'form-control invalid';
+        setZipValid(z);
+        return;
+      default:
+        break;
+    }
+    // console.log(`handleValidate: ${name} = ${value}`);
+    // const form = event.currentTarget as HTMLFormElement;
+    // if (form.checkValidity() === false) {
+    //   console.log("handleValidate: invalid form")
+    //   event.preventDefault();
+    //   event.stopPropagation();
+    //   setValidated(true);
+    //   return;
+    // }
+    setValidated(false);
+  };
+
+  const handleDireClose = (conf: boolean) => {
+    setShowDireWarning(!showDireWarning);
+    if (conf) {
+      addPerson();
+    }
   };
 
   useEffect(() => {
@@ -101,16 +183,11 @@ export default function PersonForm({
   }, [person, type]);
 
   useEffect(() => {
-    setType(type);
-  }, [type]);
-
-  useEffect(() => {
-    console.log(`showMe: ${showMe} show: ${show} `);
     setShow(showMe);
   }, [showMe]);
 
   const handleCancel = () => {
-    setShow(false);
+    setShow(!show);
     addPersonCallback(null, personType);
   };
 
@@ -155,33 +232,62 @@ export default function PersonForm({
           lat: location.lat(),
           lng: location.lng(),
         };
-        axios
-          .post(`https://davidgs.com:3001/api/${type}s`, JSON.stringify(newP))
+        AddPerson(newP, `${dbPrefix}${type}s`)
           .then((res) => {
             console.log(res);
-            console.log(res.data);
-            addPersonCallback(thisPerson, personType);
-
+            if(res) {
+              addPersonCallback(thisPerson, personType);
+            }
           })
           .catch((err) => {
             console.log(err);
           });
-        // call server to add person
       } else {
         alert("Geocode was not successful for the following reason: " + status);
       }
     });
   };
 
-  const handleSave = () => {
-    console.log(`Handle Save Home Phone: ${thisPerson?.homephone}`);
-    setShow(false);
+  const findDuplicate = (person: IRider | IDriver) => {
+    if (type.toLowerCase() === "drivers") {
+      const currentDrivers = thesePeople as IDriver[];
+      const f = currentDrivers.filter(
+        (driver) => driver._id === person._id || driver.name.trim() === person.name.trim()
+      )[0];
+      if(f) {
+        setWarning(
+          `This looks to be a duplicate ${type} entry for ${f.name}. Are you sure you want to do this?`
+        );
+        setDuplicatePerson(f);
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      const currentRiders = thesePeople as IRider[];
+      const f = currentRiders.filter(
+        (rider) => rider._id === person?._id || rider.name.trim() === person?.name.trim()
+      )[0];
+      console.log(f);
+      if(f) {
+        setWarning(
+          `This looks to be a duplicate ${type} entry for ${f.name}.`
+        );
+        setDuplicatePerson(f);
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+
+  const addPerson = () => {
     if (newPerson) {
       geocodeAddress();
       // call server to add person
     } else {
       axios
-        .post(`https://davidgs.com:3001/api/update/${type}/${thisPerson._id}`, JSON.stringify(thisPerson))
+        .post(`https://davidgs.com:3001/api/update/${dbPrefix}${type}/${thisPerson._id}`, JSON.stringify(thisPerson))
         .then((res) => {
           console.log(res);
           console.log(res.data);
@@ -190,9 +296,17 @@ export default function PersonForm({
         .catch((err) => {
           console.log(err);
         });
-      // remove riders or driver from person
-      // call server to update person
     }
+    setShow(!show);
+  };
+
+  const handleSave = () => {
+    const found = findDuplicate(thisPerson as IRider | IDriver);
+    if (found && newPerson) {
+      setShowDireWarning(true);
+      return;
+    }
+    addPerson();
   };
 
   return (
@@ -200,8 +314,8 @@ export default function PersonForm({
       <Modal show={show} onHide={handleCancel} size="xl">
         <Modal.Header closeButton>
           <Modal.Title>
-            {newPerson ? "Add " : "Edit "}
-            {!newPerson && thisPerson?.name !== "" ? "Edit " : "Add "}{" "}
+            {newPerson ? 'Add ' : 'Edit '}
+            {!newPerson && thisPerson?.name !== '' ? 'Edit ' : 'Add '}{' '}
             {!newPerson && thisPerson?.name
               ? thisPerson.name
               : `New ${personType}`}
@@ -218,15 +332,17 @@ export default function PersonForm({
                     name="name"
                     required
                     onChange={(e) => {
+                      handleValidate(e);
                       setThisPerson((prevPerson) => {
                         const np = { ...prevPerson } as IDriver | IRider;
-                        np.name= e.target.value;
+                        np.name = e.target.value;
                         return np;
                       });
                     }}
                     value={thisPerson?.name}
                   />
-                  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+                  <HelpTxt show={!nameValid} txt='Please enter a complete first and last name'/>
+                  {/* {nameValid ? <div id="nameHelp"></div> : <></> } */}
                 </Form.Group>
               </Col>
             </Row>
@@ -237,10 +353,12 @@ export default function PersonForm({
                 <Form.Group controlId="formBasicEmail">
                   <Form.Control
                     type="text"
+                    required
                     placeholder="Address"
                     name="address"
                     value={thisPerson?.address}
                     onChange={(e) => {
+                      handleValidate(e);
                       setThisPerson((prevPerson) => {
                         const np = { ...prevPerson } as IDriver | IRider;
                         np.address = e.target.value;
@@ -248,10 +366,9 @@ export default function PersonForm({
                       });
                     }}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    You must provide an address.
-                  </Form.Control.Feedback>
-                  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+                  {addrValid ? <small id="addressHelp" className="form-text">
+                    Enter a valid street address.
+                  </small> : null }
                 </Form.Group>
               </Col>
             </Row>
@@ -265,6 +382,7 @@ export default function PersonForm({
                     name="city"
                     required
                     onChange={(e) => {
+                      handleValidate(e);
                       setThisPerson((prevPerson) => {
                         const np = { ...prevPerson } as IDriver | IRider;
                         np.city = e.target.value;
@@ -273,10 +391,9 @@ export default function PersonForm({
                     }}
                     value={thisPerson?.city}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    You must provide a city.
-                  </Form.Control.Feedback>
-                  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+                  {cityValid ? <small id="cityHelp" className="form-text">
+                    Enter valid City name.
+                  </small> : null }
                 </Form.Group>
               </Col>
               <Col sm={3}>
@@ -287,26 +404,18 @@ export default function PersonForm({
                     name="state"
                     required
                     onChange={(e) => {
-                      const reg: RegExp = new RegExp(patterns.state);
-                      if (reg.test(e.target.value)) {
-                        e.target.className = "form-control valid";
-                        setCityValid(true);
-                      } else {
-                        e.target.className = "form-control invalid";
-                        setCityValid(false);
-                      }
+                      handleValidate(e);
                       setThisPerson((prevPerson) => {
                         const np = { ...prevPerson } as IDriver | IRider;
-                        np.state = e.target.value;
+                        np.state = e.target.value.toUpperCase();
                         return np;
                       });
                     }}
                     value={thisPerson?.state}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    You must provide a 2-letter state.
-                  </Form.Control.Feedback>
-                  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+                  {stateValid ? <small id="stateCodeHelp" className="form-text">
+                    Enter a valid 2-letter state abbreviation.
+                  </small>  : null }
                 </Form.Group>
               </Col>
               <Col sm={3}>
@@ -317,14 +426,7 @@ export default function PersonForm({
                     name="zipCode"
                     required
                     onChange={(e) => {
-                      const reg: RegExp = new RegExp(patterns.zip);
-                      if (reg.test(e.target.value)) {
-                        e.target.className = "form-control valid";
-                        setZipValid(true);
-                      } else {
-                        e.target.className = "form-control invalid";
-                        setZipValid(false);
-                      }
+                      handleValidate(e);
                       setThisPerson((prevPerson) => {
                         const np = { ...prevPerson } as IDriver | IRider;
                         np.zip = e.target.value;
@@ -333,10 +435,9 @@ export default function PersonForm({
                     }}
                     value={thisPerson?.zip}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    You must provide a valid zip code.
-                  </Form.Control.Feedback>
-                  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+                  {zipValid ? <small id="zipCodeHelp" className="form-text">
+                    Enter valid 5-digit Zip Code.
+                  </small> : null }
                 </Form.Group>
               </Col>
             </Row>
@@ -345,7 +446,7 @@ export default function PersonForm({
               <Col sm={6}>
                 <Form.Group controlId="formBasicEmail">
                   <PhoneInput
-                    phone={thisPerson?.homephone ? thisPerson.homephone : ""}
+                    phone={thisPerson?.homephone ? thisPerson.homephone : ''}
                     type="Home"
                     callback={setPhone}
                   />
@@ -354,7 +455,7 @@ export default function PersonForm({
               <Col sm={6}>
                 <Form.Group controlId="formBasicEmail">
                   <PhoneInput
-                    phone={thisPerson?.cellphone ? thisPerson.cellphone : ""}
+                    phone={thisPerson?.cellphone ? thisPerson.cellphone : ''}
                     type="Cell"
                     callback={setPhone}
                   />
@@ -366,16 +467,11 @@ export default function PersonForm({
               <Col sm={12}>
                 <Form.Group controlId="formBasicEmail">
                   <Form.Control
-                    type="text"
+                    type="email"
                     placeholder="Email address"
                     name="email"
                     onChange={(e) => {
-                      const reg: RegExp = new RegExp(patterns.email);
-                      if (reg.test(e.target.value)) {
-                        e.target.className = "form-control valid";
-                      } else {
-                        e.target.className = "form-control invalid";
-                      }
+                      handleValidate(e);
                       setThisPerson((prevPerson) => {
                         const np = { ...prevPerson } as IDriver | IRider;
                         np.email = e.target.value;
@@ -384,9 +480,9 @@ export default function PersonForm({
                     }}
                     value={thisPerson?.email}
                   />
-                  <small id="emailHelp" className="form-text">
-                    Enter valid email address.
-                  </small>
+                  {emailValid ? <small id="emailHelp" className="form-text">
+                    Enter valid email address like `something@something.com`.
+                  </small> : null }
                 </Form.Group>
               </Col>
             </Row>
@@ -422,6 +518,11 @@ export default function PersonForm({
           </Button>
         </Modal.Footer>
       </Modal>
+      <DireWarning
+        show={showDireWarning}
+        warning={warning}
+        onConfirm={handleDireClose}
+      />
     </>
   );
 }
