@@ -65,10 +65,10 @@ const createWindow = async () => {
   };
 
   const options = {
-    applicationName: 'Blind Ministry Router',
-    applicationVersion: '1.0.1',
+    applicationName: 'Blind Ministry Routing',
+    applicationVersion: '1.0.2',
     copyright: '© 2023',
-    version: 'b10',
+    version: 'b14',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
     authors: ['David G. Simmons'],
     website: 'https://github.com/davidgs/standalone-blind',

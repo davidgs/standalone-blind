@@ -39,7 +39,122 @@
       top: 560px;
     }
 
-    table {
+.table-wrapper {
+  margin-bottom: 25px;
+  border-radius: 6px;
+  border: 4px solid #ccc;
+  /* background: #fff; */
+  overflow: hidden; /* Clips any scrollbars that appear */
+}
+
+table {
+  width: 100%;
+  overflow: auto; /* Allow scrolling within the table */
+  display: grid;
+  /* grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(200px, 1fr)
+    minmax(150px, 1fr)
+    minmax(150px, 1fr)
+    minmax(100px, 1fr)
+    minmax(250px, 3fr); */
+}
+
+.driver-table {
+  grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(200px, 1fr)
+    minmax(150px, 1fr)
+    minmax(150px, 1fr)
+    minmax(100px, 1fr)
+    minmax(250px, 3fr);
+}
+
+.driver-table-all {
+  grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(200px, 1fr)
+    minmax(250px, 1fr);
+}
+
+.all-name{
+  display: flex;
+  flex-direction: column;
+  margin-top: -15px;
+}
+
+.name {
+  display: flex;
+  flex-direction: row;
+}
+
+.attendee-table {
+  grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(200px, 1fr)
+    minmax(250px, 1fr);
+}
+
+table thead, tr {
+  display: contents;
+}
+table tbody,
+table tr {
+  display: contents;
+}
+
+table th {
+  position: relative;
+  font-size: 18px;
+  text-align: left;
+  padding: 10px 15px;
+}
+
+table thead,
+  th {
+      border-left: 4px solid #ccc;
+      border-bottom: 4px solid #ccc;
+}
+
+table td {
+  text-align: left;
+  padding: 10px 15px;
+}
+
+table th span,
+table td span {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: block;
+}
+
+table tr td {
+  border-top: 1px solid #ccc;
+}
+
+.resize-handle {
+  display: block;
+  position: absolute;
+  cursor: col-resize;
+  width: 8px;
+  padding-left: 4px;
+  right: 0;
+  top: 0;
+  z-index: 99;
+  /* border-right: 2px solid; */
+   /* transparent; */
+}
+
+.resize-handle:hover {
+  border-color: #161616;
+}
+
+.resize-handle.active {
+  border-color: #517ea5;
+}
+
+    /* table {
       border-spacing: 5px;
       border-left: 2px solid black;
       border-right: 2px solid black;
@@ -61,13 +176,14 @@
     tr {
       border-left: 2px solid black;
       border-right: 2px solid black;
-    }
+    } */
 
 
-    tbody,
-    tr:nth-child(odd) {
-      background-color: #b4cbff;
-    }
+table tbody,
+  tr:nth-child(odd) {
+      background-color: #6face9;
+}
+
 .nav {
 	float: left;
 	width: 200px;
@@ -253,7 +369,7 @@ body {
 	display: inline;
 }
 
-table{
+/* table{
 	border-spacing: 5px;
 	border-left: 4px solid black;
 	border-right: 4px solid black;
@@ -277,7 +393,7 @@ tr {
 }
 tr:nth-child(odd) {
 	background-color: #b4cbff;
-}
+} */
 div #map {
 	display: inline-block;
 	clear: both;

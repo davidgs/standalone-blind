@@ -8,14 +8,12 @@ import axios from "axios";
 export default function PeopleManager({
   drivers,
   riders,
-  driverCallback,
-  riderCallback,
+  callback,
   reload
 }: {
   drivers: IDriver[];
   riders: IRider[];
-  driverCallback: (value: IDriver) => void;
-  riderCallback: (value: IRider) => void;
+  callback: (value: IDriver | IRider, type: string) => void;
   reload: (value: boolean) => void;
 }) {
   const [myDrivers, setMyDrivers] = React.useState<IDriver[]>(drivers);
@@ -37,12 +35,13 @@ export default function PeopleManager({
     reload(true);
   };
 
-  const deleteDriver = (driver: IDriver) => {
-    const r = myDrivers.filter(
-      (drivers) => drivers._id === driver?._id
-    )[0];
-    console.log(r);
-    if (r) {
+  const deletePerson = (person: IDriver | IRider, type: string) => {
+    if (type === "Drivers") {
+      const r = myDrivers.filter(
+        (drivers) => drivers._id === person?._id
+      )[0];
+      console.log(r);
+      if (r) {
       axios
         .post(`https://davidgs.com:3001/api/delete/drivers/${r._id}`)
         .then((res) => {
@@ -51,13 +50,23 @@ export default function PeopleManager({
         .catch((err) => {
           console.log(err);
         });
+      }
+    } else {
+      const r = myRiders.filter(
+        (riders) => riders._id === person?._id
+      )[0];
+      console.log(r);
+      if (r) {
+      axios
+        .post(`https://davidgs.com:3001/api/delete/attendees/${r._id}`)
+        .then((res) => {
+          reload(true);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+      }
     }
-
-  };
-
-  const deleteAttendee = (rider: IRider) => {
-    const newRiders = myRiders.filter((r) => r._id !== rider._id);
-    setMyRiders(newRiders);
   };
 
 
@@ -101,7 +110,7 @@ export default function PeopleManager({
               <Button
                 id="add-rider-button"
                 variant="primary"
-                value="drivers"
+                value="Attendees"
                 onClick={(e) => {
                   setShowForm(true);
                   setAddType("Attendee");
@@ -118,19 +127,20 @@ export default function PeopleManager({
           people={myDrivers}
           type="drivers"
           all={true}
-          callback={driverCallback}
-          removeCallback={deleteDriver}
+          updateCallback={addPerson}
+          removeCallback={deletePerson}
         />
         <PersonTable
           people={myRiders}
           type="attendees"
           all={true}
-          callback={riderCallback}
-          removeCallback={deleteAttendee}
+          updateCallback={addPerson}
+          removeCallback={deletePerson}
         />
       </div>
       <PersonForm
         person={null}
+        people={addType === "Driver" ? myDrivers : myRiders}
         type={addType}
         addPersonCallback={addPerson}
         showMe={showForm}

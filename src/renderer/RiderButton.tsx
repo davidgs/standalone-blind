@@ -40,7 +40,7 @@ export default function RiderButton({
         onChange={function (eventKey) {
           console.log(eventKey.target.selectedOptions[0].id);
           const dr = dropdownItems.find(
-            (d) => d._id === eventKey.target.selectedOptions[0].id
+            (d) => `map-select-${d._id}` === eventKey.target.selectedOptions[0].id
           );
           if (dr) {
             console.log(dr);
