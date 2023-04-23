@@ -36,7 +36,7 @@ export default function PeopleManager({
   };
 
   const deletePerson = (person: IDriver | IRider, type: string) => {
-    if (type === "Driver") {
+    if (type === "Drivers") {
       const r = myDrivers.filter(
         (drivers) => drivers._id === person?._id
       )[0];

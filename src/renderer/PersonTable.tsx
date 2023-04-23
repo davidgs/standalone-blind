@@ -11,6 +11,7 @@ import {
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import MiniMap from './miniMaps/MiniMap';
 import { GoogleMap, DirectionsWaypoint } from '@react-google-maps/api';
+import DireWarning from './components/DireWarning';
 
 interface TableColumn {
   key: string;
@@ -42,8 +43,7 @@ export default function PersonTable({
   all: boolean;
   updateCallback: (person: IDriver | IRider, type: string) => void;
   removeCallback: (
-    rider: IRider | null,
-    driver: IDriver | null,
+    person: IRider | IDriver | null,
     type: string
   ) => void;
 }) {
@@ -52,7 +52,7 @@ export default function PersonTable({
     people
   );
   const [showForm, setShowForm] = React.useState<boolean>(false);
-  const thisType = type;
+  const thisType: string = type;
   // const [thisType, setThisType] = React.useState<string>(type);
   const [editingPerson, setEditingPerson] = React.useState<
     IDriver | IRider | null
@@ -62,6 +62,14 @@ export default function PersonTable({
   const tableRef = useRef(null);
   const [columnWidths, setColumnWidths] = useState<ColWidth>({});
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [showWarning, setShowWarning] = useState<boolean>(false);
+  const [direText, setWarning] = useState<string>('');
+  const [aboutToRemove, setAboutToRemove] = useState<IDriver | IRider | null>(null);
+
+  const tableClass =
+    thisType === 'drivers' && all ? 'resize-table driver-table-all' : 'resize-table driver-table';
+
+  const nameStyle = all ? 'all-name' : 'name';
 
   const riderHeaders: TableColumn[] = [
     { key: 'attendee', label: 'Attendee', ref: useRef(null) },
@@ -211,17 +219,33 @@ export default function PersonTable({
     const idValue = id.value;
     const p = JSON.parse(idValue) as IRider;
     console.log(`Remove Rider: ${idValue}`);
-    removeCallback(p, null, 'attendees');
+    removeCallback(p, 'attendees');
+  };
+
+  const reallyRemovePerson = (value: boolean) => {
+    if(!value){
+      setAboutToRemove(null);
+      setShowWarning(false);
+      return;
+    }
+    const p = aboutToRemove as IDriver | IRider;
+    if (p === null) {
+      return;
+    }
+    console.log(`Really Remove Person: ${p._id}`);
+    thisType === 'drivers' ? removeCallback(p as IDriver, 'Drivers') : removeCallback(p as IRider, 'Attendees')
+    setAboutToRemove(null);
+    setShowWarning(false);
   };
 
   const removePerson = (e: SyntheticEvent) => {
     const id = e.currentTarget as HTMLButtonElement;
     const idValue = id.value;
     const p = JSON.parse(idValue) as IDriver | IRider;
-    console.log(`Remove Person: ${idValue}`);
-    thisType === 'drivers'
-      ? removeCallback(null, p as IDriver, thisType)
-      : removeCallback(p as IRider, null, thisType);
+    const tType = thisType as string === 'drivers' ? 'Driver' : 'Attendee';
+    setWarning(`Removing an ${tType} is permanent and cannot be undone!`);
+    setAboutToRemove(p);
+    setShowWarning(true);
   };
 
   const riders = (driver: IDriver) => {
@@ -277,12 +301,40 @@ export default function PersonTable({
     const riders = driver.riders;
     return riders;
   };
+
   const rows = () => {
     return personList.map((person) => {
       return (
         <tr key={person.name} style={{ borderBottom: '2px solid black' }}>
           <td style={{ borderLeft: '1px solid black' }}>
             {/* on edit-all form, this deletes a person. On the routing form, this puts them back on the map */}
+            {all ? (
+              <div style={{ display: 'flex', flexDirection: 'row', paddingBottom: '5px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <OverlayTrigger
+                    placement="auto"
+                    overlay={
+                      <Tooltip id="edit-btn-tooltip">
+                        Edit {person.name}'s Information.
+                      </Tooltip>
+                    }
+                  >
+                    <Button
+                      size="sm"
+                      variant="success"
+                      value={JSON.stringify(person)}
+                      onClick={editThisPerson}
+                    >
+                      <Pencil />
+                    </Button>
+                  </OverlayTrigger>
+                </div>
+                &nbsp;
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  &nbsp;
+                </div>
+              </div>
+            ) : null}
             <div style={{ display: 'flex', flexDirection: 'row' }}>
               {all ? (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -326,7 +378,7 @@ export default function PersonTable({
                 </div>
               )}
               &nbsp;
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className={nameStyle}>
                 &nbsp; {person.name}
               </div>
             </div>
@@ -392,7 +444,7 @@ export default function PersonTable({
         <table
           className={
             thisType === 'drivers'
-              ? 'resize-table driver-table'
+              ? tableClass
               : 'resize-table attendee-table'
           }
           ref={tableRef}
@@ -439,6 +491,11 @@ export default function PersonTable({
         type={type}
         addPersonCallback={editPerson}
         showMe={showForm}
+      />
+      <DireWarning
+        show={showWarning}
+        warning={direText}
+        onConfirm={reallyRemovePerson}
       />
     </div>
   );
