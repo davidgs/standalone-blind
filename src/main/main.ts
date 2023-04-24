@@ -9,8 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { app, BrowserWindow, shell, ipcMain, autoUpdater } from 'electron';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -22,7 +21,13 @@ class AppUpdater {
     autoUpdater.checkForUpdatesAndNotify();
   }
 }
+const server = 'https://link-maker.davidgs.com/';
+const url = `${server}/update/${process.platform}/${app.getVersion()}`;
+const up = autoUpdater;
 
+setInterval(() => {
+  up.checkForUpdates();
+}, 1.8e+6);
 let mainWindow: BrowserWindow | null = null;
 
 

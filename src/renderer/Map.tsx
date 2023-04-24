@@ -9,9 +9,6 @@ import {
 
 import "./App.css";
 import PlaceInfo from "./Places";
-import PhoneInput from "./components/PhoneInput";
-// import { Modal, Form, Row, Col, Button } from "react-bootstrap";
-// import PhoneInput from "./components/PhoneInput";
 
 const libraries: (
   | "drawing"

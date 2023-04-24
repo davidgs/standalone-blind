@@ -22,10 +22,12 @@ export default function Map({
   driver,
   attendees,
   id,
+  buildIt
 }: {
   driver: IDriver;
   attendees: IRider[];
   id: string;
+  buildIt: boolean;
 }) {
   // const { isLoaded, loadError } = useJsApiLoader({
   //   googleMapsApiKey: "AIzaSyB6NXzTC1jKA4cQuBaTNLAun7pRFApVSbc",
@@ -56,12 +58,21 @@ export default function Map({
   ];
 
   useEffect(() => {
+    console.log("Map useEffect");
+    console.log(driver);
+    console.log(attendees);
+    if(buildIt){
+      buildRoute();
+    }
+  }, [buildIt]);
+
+  useEffect(() => {
     console.log("Map drivers useEffect");
     console.log(driver);
     setMapDrivers([driver]);
   }, [driver]);
 
-  const buildRoute = () => {
+  function buildRoute() {
     if(mapAttendees === undefined || mapAttendees.length === 0) return;
     directionsRenderer.setMap(map.current);
     const waypoints: google.maps.DirectionsWaypoint[] = [];

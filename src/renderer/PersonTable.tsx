@@ -427,6 +427,7 @@ export default function PersonTable({
                 id={`map-${person._id}`}
                 attendees={getMyRiders(person as IDriver)}
                 callback={noCallBack}
+                buildIt={false}
               />
             </td>
           ) : null}
