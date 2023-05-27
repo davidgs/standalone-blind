@@ -42,7 +42,7 @@
 .table-wrapper {
   margin-bottom: 25px;
   border-radius: 6px;
-  border: 4px solid #ccc;
+  border: 2px solid #000;
   /* background: #fff; */
   overflow: hidden; /* Clips any scrollbars that appear */
 }
@@ -69,6 +69,11 @@ table {
     minmax(100px, 1fr)
     minmax(250px, 3fr);
 }
+
+table tr:nth-child(odd) td{
+  background-color: #e2ddf6;
+}
+
 
 .driver-table-all {
   grid-template-columns:
@@ -112,8 +117,8 @@ table th {
 
 table thead,
   th {
-      border-left: 4px solid #ccc;
-      border-bottom: 4px solid #ccc;
+      border-left: 2px solid #000;
+      border-bottom: 4px solid #000;
 }
 
 table td {
@@ -428,5 +433,94 @@ div #map {
   margin-bottom: 20px;
   transition: opacity .4s ease-out;
 }
+
+.react-tabs__tab--selected {
+  background: #c0b3e9;
+  z-index: 100;
+}
+
+.react-tabs__tab--selected::after {
+  background: #c0b3e9 !important;
+}
+.react-tabs__tab-list::after {
+    content: "";
+    position: absolute;
+    top: 82px;
+    left: 0;
+    right: 0;
+    border-right: 1px solid grey;
+    background: #c0b3e9;
+    height: 20px;
+    border-radius: 10px 10px 0px 0;
+}
+.react-tabs__tab-list::before {
+    content: "";
+    position: absolute;
+    top: 82px;
+    left: 0;
+    right: 0;
+    border-left: 1px solid grey;
+    border-top-left-radius: 10px;
+    margin-left: 0.5px;
+    border-top: none;
+    background: #c0b3e9;
+    height: 20px;
+}
+
+.arrow-rotate {
+  transform: rotate(90deg);
+}
+
+.react-tabs__tab--selected {
+  background: #c0b3e9 !important;
+}
+
+.react-tabs__tab--selected::before {
+  background: #c0b3e9 !important;
+}
+
+.react-tabs__tab--selected::after {
+  background: #c0b3e9 !important;
+}
+
+.react-tabs__tab-panel--selected {
+  background: #c0b3e9 !important;
+}
+
+.btn-icon-only {
+  /* border-color: #0B3665; */
+  /* border: 1px solid #0B3665; */
+  border-radius: 10%;
+  height: 60px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  /* border-top-color: initial;
+  border-top-style: solid;
+  border-top-width: 0.5px;
+  border-right-color: initial;
+  border-right-style: solid;
+  border-right-width: 0.5px;
+  border-bottom-color: initial;
+  border-bottom-style: solid;
+  border-bottom-width: 0.5px;
+  border-left-color: initial;
+  border-left-style: solid;
+  border-left-width: 0.5px;
+  border-image-source: initial;
+  border-image-slice: initial;
+  border-image-width: initial;
+  border-image-outset: initial;
+  border-image-repeat: initial;
+  outline: solid; */
+  color: #0B3665;
+}
+
+.btn-icon-only:hover {
+  size-adjust: 10%;
+}
+
+/* .react-tabs__tab-list::before {
+  border-bottom-right-radius: 10px !important;
+} */
 
 @import '/node_modules/bootstrap/dist/css/bootstrap.min.css';

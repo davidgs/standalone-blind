@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button } from 'react-bootstrap';
 import { ExclamationOctagon } from 'react-bootstrap-icons';
@@ -32,8 +32,9 @@ export default function DireWarning({
 }: {
   show: boolean;
   warning: string;
+  // eslint-disable-next-line no-unused-vars
   onConfirm: (value: boolean) => void;
-}): JSX.Element {
+}): React.JSX.Element {
   const [showConfig, setShowConfig] = useState<boolean>(false);
 
   useEffect(() => {
@@ -51,18 +52,20 @@ export default function DireWarning({
   };
 
   return (
-    <Modal show={showConfig} onHide={handleClose}>
+    <Modal show={showConfig} onHide={handleClose} size="lg">
       <Modal.Header closeButton>
         <Modal.Title>
-          <h1 style={{ color: 'red', textAlign: 'center' }}><ExclamationOctagon /> Warning</h1>
+          <h1 style={{ color: 'red', textAlign: 'center' }}>
+            <ExclamationOctagon /> Warning
+          </h1>
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>
-          {warning}
+        <div style={{ textAlign: 'center' }}>
+          <h2>{warning}</h2>
           <br />
-          Are you sure you want to continue?
-        </p>
+          <h3>Are you sure you want to continue?</h3>
+        </div>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>
