@@ -1,3 +1,25 @@
+/* The MIT License (MIT)
+ *
+ * Copyright (c) 2022-present David G. Simmons
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
 /**
@@ -9,22 +31,49 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { app, BrowserWindow, shell, autoUpdater, ipcMain } from 'electron';
+import Store from 'electron-store';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
+const electronApp = require('electron').app;
+
+const store = new Store();
+
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdates();
   }
 }
+const server = 'https://blind-server.davidgs.com/';
+const url = `${server}/update/${process.platform}/${app.getVersion()}`;
+const up = autoUpdater;
+up.setFeedURL({ url });
 
+/*
+ * get the params from the last set of routes
+ * @return QR Configuration settings
+ */
+ipcMain.handle('get-last-routes', () => {
+  return JSON.stringify(store.get('blind-routes', null));
+});
+
+/*
+ * save the params from the last set of routes
+ * @return QR Configuration settings
+ */
+ipcMain.handle('save-last-routes', (e: Event, routes: string) => {
+  store.delete('blind-routes');
+  store.set('blind-routes', JSON.parse(routes));
+  return JSON.stringify(store.get('blind-routes', null));
+});
+
+setInterval(() => {
+  up.checkForUpdates();
+}, 1.8e6);
 let mainWindow: BrowserWindow | null = null;
-
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -66,7 +115,7 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.0.2',
+    applicationVersion: '1.0.3',
     copyright: '© 2023',
     version: 'b14',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',

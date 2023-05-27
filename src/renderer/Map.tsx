@@ -1,82 +1,89 @@
-import React, { useEffect, useState, useRef } from "react";
-import { IDriver, IRider } from "./types";
-import {
-  GoogleMap,
-  StandaloneSearchBox,
-  useJsApiLoader,
-  useLoadScript,
-} from "@react-google-maps/api";
+/* The MIT License (MIT)
+ *
+ * Copyright (c) 2022-present David G. Simmons
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+import { useEffect, useState } from 'react';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { IPerson, ChurchPlace } from './types';
 
-import "./App.css";
-import PlaceInfo from "./Places";
-import PhoneInput from "./components/PhoneInput";
-// import { Modal, Form, Row, Col, Button } from "react-bootstrap";
-// import PhoneInput from "./components/PhoneInput";
+import './App.css';
+import PlaceInfo from './map-components/Places';
 
-const libraries: (
-  | "drawing"
-  | "geometry"
-  | "localContext"
-  | "places"
-  | "visualization"
-)[] = ["places"];
+const gLibraries: (
+  | 'drawing'
+  | 'geometry'
+  | 'localContext'
+  | 'places'
+  | 'visualization'
+)[] = ['places'];
 
 export default function Map({
   drivers,
   attendees,
-  callback,
+  mapCallback,
 }: {
-  drivers: IDriver[];
-  attendees: IRider[];
-  callback: (rider: IRider | null, driver: IDriver | null) => void;
+  drivers: IPerson[];
+  attendees: IPerson[];
+  mapCallback: (
+    // eslint-disable-next-line no-unused-vars
+    rider: IPerson | null | undefined,
+    // eslint-disable-next-line no-unused-vars
+    driver: IPerson | null | undefined
+  ) => void;
 }) {
+  /** Load the Google Maps library * */
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyB6NXzTC1jKA4cQuBaTNLAun7pRFApVSbc",
-    libraries: libraries,
+    googleMapsApiKey: 'AIzaSyB6NXzTC1jKA4cQuBaTNLAun7pRFApVSbc',
+    libraries: gLibraries,
   });
 
-  const [mapDrivers, setMapDrivers] = React.useState<IDriver[]>(drivers);
-  const [mapAttendees, setMapAttendees] = React.useState<IRider[]>(attendees);
+  const [mapDrivers, setMapDrivers] = useState<IPerson[]>(drivers);
+  const [mapAttendees, setMapAttendees] = useState<IPerson[]>(attendees);
 
-  const churchPlace: IDriver[] = [
-    {
-      name: "RLC Church",
-      address: "1234 Church St, Raleigh, NC 27609",
-      homephone: "",
-      cellphone: "",
-      email: "",
-      city: "Cary",
-      state: "NC",
-      zip: "27511",
-      notes: "",
-      _id: "1234",
-      location: { lat: 35.7298286, lng: -78.77857179999999 },
-      riders: [],
-    },
-  ];
-
+  /**
+   * Keep the list of drivers up to date
+   */
   useEffect(() => {
-    console.log("Map drivers useEffect");
-    console.log(drivers);
     setMapDrivers(drivers);
   }, [drivers]);
 
+  /**
+   * Keep the list of attendees up to date
+   * */
   useEffect(() => {
-    console.log("Map attendees useEffect");
-    console.log(attendees);
     setMapAttendees(attendees);
   }, [attendees]);
 
-  const addRider = (rider: IRider | null, driver: IDriver | null) => {
-    console.log("addRider");
-    callback(rider, driver);
+  const addRider = (
+    rider: IPerson | null | undefined,
+    driver: IPerson | null | undefined
+  ) => {
+    mapCallback(rider, driver);
   };
 
   // without height and width you won't see a map
   const mapContainerStyle = {
-    height: "80vh",
-    width: "80vw",
-    margin: "auto",
+    height: '80vh',
+    width: '90vw',
+    margin: 'auto',
   };
   // RLC is the default center
   const defaultProps = {
@@ -100,23 +107,23 @@ export default function Map({
       <GoogleMap options={options} mapContainerStyle={mapContainerStyle}>
         {isLoaded && (
           <PlaceInfo
-            markerPlaces={churchPlace}
+            markerPlaces={[ChurchPlace]}
             type="church"
             drivers={[]}
-            callback={addRider}
+            placeCallback={null}
           />
         )}
         <PlaceInfo
           markerPlaces={mapDrivers}
           type="drivers"
           drivers={[]}
-          callback={addRider}
+          placeCallback={null}
         />
         <PlaceInfo
           markerPlaces={mapAttendees}
           type="attendees"
           drivers={mapDrivers}
-          callback={addRider}
+          placeCallback={addRider}
         />
       </GoogleMap>
     );

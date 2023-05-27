@@ -1,49 +1,60 @@
-import React, { useState } from "react";
-import { useLoadScript, StandaloneSearchBox } from "@react-google-maps/api";
-import { Form, Row, Col } from "react-bootstrap";
-import "/node_modules/bootstrap/dist/css/bootstrap.min.css";
+/* The MIT License (MIT)
+ *
+ * Copyright (c) 2022-present David G. Simmons
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+import React, { useState } from 'react';
+import { StandaloneSearchBox } from '@react-google-maps/api';
+import { Form, Row, Col } from 'react-bootstrap';
 
-const libraries: (
-  | "drawing"
-  | "geometry"
-  | "localContext"
-  | "places"
-  | "visualization"
-)[] = ["places"];
-
-export default function AddressField(): JSX.Element {
+export default function AddressField(): React.JSX.Element {
   // const { isLoaded, loadError } = useLoadScript({
   //   googleMapsApiKey: "AIzaSyARN4ZLpzuzwGo2M6PKr2M--juR5zJyrew",
   //   libraries,
   // });
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [zip, setZip] = useState("");
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
   // const onLoad = (ref) => (this.searchBox = ref);
 
-  function onPlacesChanged(this: any) {
-    console.log(this.searchBox.getPlaces());
-    const comps = this.searchBox.getPlaces()[0];
-    console.log(comps.formatted_address);
-    const thisAddr = comps.formatted_address;
-    const addrComps = thisAddr.split(",");
-    setAddress(addrComps[0]);
-    setCity(addrComps[1]);
-    const stZ = addrComps[2].split(" ");
-    setState(stZ[1]);
-    setZip(stZ[2]);
-    console.log(addrComps);
-  }
-
-  // if (loadError) return (<h1>Error</h1>);
-  // if (!isLoaded) return (<h1>Loading...</h1>);
+  const searchBox = React.useRef(null);
+  // const onPlacesChanged = () => {
+  //   const comps = searchBox.current?.getPlaces()[0];
+  //   const thisAddr = comps.formatted_address;
+  //   const addrComps = thisAddr.split(',');
+  //   setAddress(addrComps[0]);
+  //   setCity(addrComps[1]);
+  //   const stZ = addrComps[2].split(' ');
+  //   setState(stZ[1]);
+  //   setZip(stZ[2]);
+  // };
 
   return (
     <Form.Group>
       <Row>
         <Col sm={12}>
-          <StandaloneSearchBox onPlacesChanged={onPlacesChanged}>
+          <StandaloneSearchBox
+            // onPlacesChanged={onPlacesChanged}
+            ref={searchBox}
+          >
             <Form.Control
               type="text"
               placeholder="address"
