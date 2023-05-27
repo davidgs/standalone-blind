@@ -28,6 +28,7 @@ import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import React, { SyntheticEvent, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import { Button } from 'react-bootstrap';
 import Header from './Header';
 import Nav from './Nav';
@@ -43,7 +44,7 @@ function Hello() {
   const [selectedAttendees, setSelectedAttendees] = React.useState<IPerson[]>(
     []
   );
-  const [myCarpools, setMyCarpools] = React.useState<ICarpool[]>([]);
+  const [carpools, setCarpools] = React.useState<ICarpool[]>([]);
   const [selectedDrivers, setSelectedDrivers] = React.useState<IPerson[]>([]);
   const [managePeople, setManagePeople] = React.useState<boolean>(false);
   const driversDB = 'drivers';
@@ -52,8 +53,8 @@ function Hello() {
   /* Sort carpools by driver name
      @param carpools - the carpools to sort
    */
-  const sortCarpools = (carpools: ICarpool[]) => {
-    const sorted = carpools.sort((a, b) =>
+  const sortCarpools = (carps: ICarpool[]) => {
+    const sorted = carps.sort((a, b) =>
       a.driver.name > b.driver.name ? 1 : -1
     );
     return sorted;
@@ -65,7 +66,7 @@ function Hello() {
   const removePerson = (e: SyntheticEvent) => {
     const target = e.currentTarget as HTMLInputElement;
     const pers = JSON.parse(target?.value);
-    const newCarpools = myCarpools.map((carp) => {
+    const newCarpools = carpools.map((carp) => {
       const newRiders = carp.riders.filter((rider) => rider._id !== pers._id);
       const newCarp: ICarpool = { driver: carp.driver, riders: newRiders };
       return newCarp;
@@ -73,7 +74,7 @@ function Hello() {
     const act = selectedAttendees;
     act.push(pers);
     setSelectedAttendees(act);
-    setMyCarpools(sortCarpools(newCarpools));
+    setCarpools(sortCarpools(newCarpools));
     // eslint-disable-next-line no-use-before-define
   };
 
@@ -92,13 +93,22 @@ function Hello() {
   };
 
   useEffect(() => {
+      carpools.forEach((carp) => {
+        return (
+          console.log('carp change: ', carp.driver.name)
+        );
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carpools]);
+
+  useEffect(() => {
     if (!managePeople) {
       getAll();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [managePeople]);
 
-  /* when someone is seelcted in a menu, add them to the map and remove them
+  /* when someone is selected in a menu, add them to the map and remove them
       from the menu.
       @param id - the id of the person to add to the map
       @param personType - the type of person to add to the map
@@ -106,41 +116,30 @@ function Hello() {
   const removeFromMenu = (id: string, personType: string) => {
     if (personType.toLocaleLowerCase() === 'driver') {
       // find in allDrivers
-      const newDrivers = allDrivers.filter((driver) => driver._id === id);
-      // get the current selectedDrivers
-      const act = { selectedDrivers };
+      const newDriver = allDrivers.find((driver) => driver._id === id);
+      console.log('newDriver: ', newDriver?.name)
+
       // remove from allDrivers
       const th = allDrivers.filter((driver) => driver._id !== id);
       // set allDrivers to the new array
       setAllDrivers(th);
-      // add the new driver to the selectedDrivers
-      act.selectedDrivers.push(newDrivers[0]);
-      // set the selectedDrivers to the new array
-      setSelectedDrivers(act.selectedDrivers);
+      setSelectedDrivers(selectedDrivers.concat(newDriver as IPerson));
       // get the current carpools
-      const cp = myCarpools;
-      // find the carpool with the driver
-      const newCarpool = cp.filter(
-        (carpool) => carpool.driver._id === newDrivers[0]._id
-      );
-      // if there isn't a carpool with the driver, add the driver to a new carpool
-      if (newCarpool.length <= 0) {
-        const newCP = { driver: newDrivers[0], riders: [] };
-        cp.push(newCP);
-        setMyCarpools(sortCarpools(cp));
-      }
+        const newCP = { driver: newDriver as IPerson, riders: [] as IPerson[] };
+        setCarpools(sortCarpools(carpools.concat(newCP)));
     }
     if (personType.toLocaleLowerCase() === 'attendee') {
       const newAttendees = allAttendees.filter((att) => att._id === id);
       const act = selectedAttendees;
       const th = allAttendees.filter((att) => att._id !== id);
       setAllAttendees(th);
-      act.push(newAttendees[0]);
-      setSelectedAttendees(act);
+      setSelectedAttendees(act.concat(newAttendees[0]));
     }
   };
 
-  /* When someone is removed from the map, add them back to the menu
+  /* When someone is removed from the map, add them back to the menu,
+     unless it is a rider, and we have a driver defined. In that case,
+     add the rider to the drivers' carpool.
      @param rider - the person to add back to the menu
      @param driver - the driver to add the rider back to
    */
@@ -148,22 +147,22 @@ function Hello() {
     rider: IPerson | null | undefined,
     driver: IPerson | null | undefined
   ) => {
-    const cp = myCarpools;
-    const newCarpool = cp.filter(
+    const cp = carpools;
+    const newCarpool = cp.find(
       (carpool) => carpool.driver._id === driver?._id
     );
-    if (newCarpool.length > 0) {
-      newCarpool[0].riders.push(rider as IPerson);
+    if (newCarpool !== undefined) {
+      newCarpool.riders.push(rider as IPerson);
       const cps = cp.filter((carpool) => carpool.driver._id !== driver?._id);
-      cps.push(newCarpool[0]);
-      setMyCarpools(sortCarpools(cps));
+      cps.push(newCarpool);
+      setCarpools(sortCarpools(cps));
     } else {
       const newCarpool2: ICarpool = {
         driver: driver as IPerson,
         riders: [rider as IPerson],
       };
-      cp.push(newCarpool2);
-      setMyCarpools(cp);
+      cp.concat(newCarpool2);
+      setCarpools(sortCarpools(cp));
     }
     const sa = selectedAttendees;
     const newAttendees = sa.filter((att) => att._id !== rider?._id);
@@ -179,9 +178,9 @@ function Hello() {
   /* Save the current routes */
   const saveRoutes = () => {
     window.electronAPI
-      .saveLastRoutes(JSON.stringify(myCarpools))
+      .saveLastRoutes(JSON.stringify(carpools))
       .then((response) => {
-        setMyCarpools(JSON.parse(response));
+        setCarpools(JSON.parse(response));
       })
       .catch((error) => {
         // eslint-disable-next-line no-console
@@ -198,17 +197,34 @@ function Hello() {
           return;
         }
         const newCarpools = JSON.parse(response);
-        setMyCarpools(newCarpools);
+        setCarpools(sortCarpools(newCarpools));
         const sd = selectedDrivers;
         newCarpools.forEach((carpool: ICarpool) => {
           sd.push(carpool.driver);
         });
-        setSelectedDrivers(sd);
+        setSelectedDrivers(SortPeople(sd));
       })
       .catch((error) => {
         // eslint-disable-next-line no-console
         console.log('loadRoutes error: ', error);
       });
+  };
+
+  const removeDrive = (driverID: string) => {
+    const newCarpools = carpools.find((carp) => carp.driver._id === driverID);
+    if (newCarpools !== undefined) {
+      const newDrivers = selectedDrivers.filter(
+        (driver) => driver._id !== driverID
+      );
+      setSelectedDrivers(SortPeople(newDrivers));
+      const newCarpools2 = carpools.filter(
+        (carp) => carp.driver._id !== driverID
+      );
+      setCarpools(sortCarpools(newCarpools2));
+      const newAttendees = selectedAttendees.concat(newCarpools.riders);
+      setSelectedAttendees(SortPeople(newAttendees));
+      setAllDrivers(SortPeople(allDrivers.concat(newCarpools.driver)));
+    }
   };
 
   return (
@@ -228,7 +244,7 @@ function Hello() {
           mapCallback={removeFromMap}
         />
       ) : null}
-      {!managePeople && myCarpools.length > 0 ? (
+      {!managePeople && carpools.length > 0 ? (
         <div
           style={{
             width: '90vw',
@@ -244,7 +260,7 @@ function Hello() {
           >
             <h2>Drivers</h2>
           </div>
-          <MyTabList carpools={myCarpools} removePerson={removePerson} />
+          <MyTabList carpools={carpools} removePerson={removePerson} removeDriver={removeDrive} />
         </div>
       ) : null}
       {/* All the Attendees stuff */}
@@ -275,6 +291,7 @@ function Hello() {
                     flexDirection: 'row',
                     marginLeft: '3rem',
                   }}
+                  key={uuidv4()}
                 >
                   <div key={att._id}>
                     <h4>{att.name}</h4>
@@ -333,7 +350,7 @@ function Hello() {
           <Button
             variant="primary"
             onClick={saveRoutes}
-            disabled={myCarpools.length < 1}
+            disabled={carpools.length < 1}
           >
             Save All Routes
           </Button>

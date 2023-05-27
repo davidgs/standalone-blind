@@ -36,16 +36,20 @@ import {
 import MiniMap from 'renderer/map-components/MiniMap';
 import { ICarpool, IEmail, IPerson } from '../types';
 import PersonModal from './EmailForm';
+import RemoveDriver from './RemoveDriver';
 
 export default function MyTabList({
   carpools,
   removePerson,
+  removeDriver,
 }: {
   carpools: ICarpool[];
   // eslint-disable-next-line no-unused-vars
   removePerson: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  // eslint-disable-next-line no-unused-vars
+  removeDriver: (driverID: string) => void;
 }): React.JSX.Element {
-  const [myCarpools, setMyCarpools] = useState<ICarpool[]>(carpools);
+  // const [myCarpools, setMyCarpools] = useState<ICarpool[]>(cps);
   const [tabs, setTabs] = React.useState<React.JSX.Element[]>([]);
   const [tabPanels, setTabPanels] = React.useState<React.JSX.Element[]>([]);
   const [showEmailModal, setShowEmailModal] = useState<boolean>(false);
@@ -55,15 +59,17 @@ export default function MyTabList({
     info: null,
   });
 
-  useEffect(() => {
-    setMyCarpools(carpools);
-  }, [carpools]);
+  // useEffect(() => {
+  //   console.log(`carpools changed: '${cps.length}`);
+  //   makeTabs(cps);
+  //   setMyCarpools(cps);
+  // }, [cps]);
 
   useEffect(() => {
     // eslint-disable-next-line no-use-before-define
-    makeTabs(myCarpools);
+    makeTabs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myCarpools]);
+  }, [carpools]);
 
   /* Set the directions for a driver
      @param directions - the directions to set
@@ -90,8 +96,9 @@ export default function MyTabList({
   /* Make Tab Panels for Carpools
      @param cars - the carpools to make panels for
    */
-  function makeTabPanels(cars: ICarpool[]) {
-    const list = cars.map((carp: ICarpool) => {
+  function makeTabPanels() {
+    console.log(`makeTabPanels: ${carpools.length}`)
+    const list = carpools.map((carp: ICarpool) => {
       const riders = carp.riders.map((rider: IPerson) => {
         return (
           <>
@@ -223,7 +230,7 @@ export default function MyTabList({
             overflow: 'scroll',
             borderLeft: '1px solid grey',
             borderRight: '1px solid grey',
-            borderBottom: '1px solid grey',
+            // borderBottom: '1px solid grey',
             borderBottomLeftRadius: '10px',
             borderBottomRightRadius: '10px',
             backgroundColor: '#c0b3e9',
@@ -300,6 +307,7 @@ export default function MyTabList({
                         value={JSON.stringify(carp)}
                         id={`email-route-${carp.driver._id}`}
                         onClick={sendRouteMail}
+                        disabled={carp.riders.length === 0 }
                       >
                         <EnvelopeAtFill />
                       </Button>
@@ -349,12 +357,14 @@ export default function MyTabList({
             >
               <h3 style={{ margin: 'auto' }}>
                 Directions{' '}
+                { carp.riders.length > 0 ?
                 <Button
                   variant="icon-only"
                   size="lg"
                   onClick={setShow}
                   style={{ transform: 'rotate(0deg)' }}
                   id={`directions-btn-${carp.driver._id}`}
+                  // disabled={carp.riders.length === 0}
                 >
                   <OverlayTrigger
                     placement="auto"
@@ -370,6 +380,7 @@ export default function MyTabList({
                     />
                   </OverlayTrigger>
                 </Button>
+                : null }
               </h3>
             </div>
             <div
@@ -403,14 +414,45 @@ export default function MyTabList({
     setTabPanels(list);
   }
 
-  const makeTabs = (cars: ICarpool[]) => {
+  /* Remove a driver from the list
+      @param event - the event that triggered the callback
+  */
+  const remove = (event: SyntheticEvent) => {
+    event.preventDefault();
+    const id = event.currentTarget.id;
+    // close-${carpool.driver._id}
+    const driverID = id.replace('close-', '');
+    console.log('remove');
+    removeDriver(driverID);
+  }
+
+  const makeTabs = () => {
     const newTabs: React.JSX.Element[] = [];
-    cars.forEach((carpool) => {
-      newTabs.push(<Tab key={uuidv4()}>{carpool.driver.name}</Tab>);
+    carpools.forEach((carpool) => {
+      newTabs.push(<Tab key={uuidv4()}>{carpool.driver.name}
+      <OverlayTrigger
+        placement="auto"
+        overlay={
+          <Tooltip id="clear-btn-tooltip">
+            Remove {carpool.driver.name} from the active drivers.
+          </Tooltip>
+        }
+      >
+      <span
+        role="button"
+        className="close"
+        id={`close-${carpool.driver._id}`}
+        key={`${carpool.driver._id}-closer`}
+        onClick={remove}
+        onKeyPress={remove}
+      />
+      </OverlayTrigger>
+      </Tab>);
     });
     setTabs(newTabs);
-    makeTabPanels(cars);
+    makeTabPanels();
   };
+
   const handleClose = () => {
     setShowEmailModal(!showEmailModal);
   };
