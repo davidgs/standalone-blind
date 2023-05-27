@@ -439,6 +439,12 @@ div #map {
   z-index: 100;
 }
 
+.react-tabs__tab {
+  background-color: #d0cfd1;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+  /* z-index: -100; */
+}
 .react-tabs__tab--selected::after {
   background: #c0b3e9 !important;
 }
@@ -460,8 +466,9 @@ div #map {
     left: 0;
     right: 0;
     border-left: 1px solid grey;
-    border-top-left-radius: 10px;
-    margin-left: 0.5px;
+    border-top-right-radius: 10px;
+    /* border-top-left-radius: 10px; */
+    /* margin-left: 0.5px; */
     border-top: none;
     background: #c0b3e9;
     height: 20px;
@@ -490,7 +497,8 @@ div #map {
 .btn-icon-only {
   /* border-color: #0B3665; */
   /* border: 1px solid #0B3665; */
-  border-radius: 10%;
+  /* border-radius: 10%; */
+  border-color: none !important;
   height: 60px;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
@@ -517,6 +525,41 @@ div #map {
 
 .btn-icon-only:hover {
   size-adjust: 10%;
+}
+
+.close {
+  position: relative;
+  right: 12px;
+  top: -10px;
+  width: 4px;
+  height: 8px;
+  opacity: 1;
+  z-index: 99;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.close:hover {
+  opacity: 0.5;
+}
+
+.close:before,
+.close:after {
+  position: absolute;
+  left: 20px;
+  content: ' ';
+  height: 10px;
+  width: 2px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.close:before {
+  transform: rotate(45deg);
+}
+
+.close:after {
+  transform: rotate(-45deg);
 }
 
 /* .react-tabs__tab-list::before {
