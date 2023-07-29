@@ -36,10 +36,20 @@ import Store from 'electron-store';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import nodemailer, {SentMessageInfo} from 'nodemailer';
 
 const electronApp = require('electron').app;
 
 const store = new Store();
+
+
+var transporter = nodemailer.createTransport({
+ service: 'gmail',
+ auth: {
+        user: 'blindministryRLC@gmail.com',
+        pass: 'lyrjciojjnfaccps'
+    }
+});
 
 class AppUpdater {
   constructor() {
@@ -58,6 +68,25 @@ up.setFeedURL({ url });
  */
 ipcMain.handle('get-last-routes', () => {
   return JSON.stringify(store.get('blind-routes', null));
+});
+
+async function SendIt(recipient: string, body: string) {
+  const mailOptions = {
+    from: 'blindministryRLC@gmail.com', // sender address
+    name: 'Blind Ministry Drivers',
+    to: recipient, // list of receivers
+    replyTo: 'annette.langefeld1@gmail.com',
+    // cc: 'annette.langefeld1@gmail.com',
+    bcc: 'davidgs@me.com',
+    subject: 'Blind Ministry Routing', // Subject line
+    html: body, // plain text body
+  };
+  const foo = await transporter.sendMail(mailOptions)
+  return JSON.stringify(foo);
+}
+
+ipcMain.handle('send-mail', (e: Event, recipient: string, body: string) => {
+  return SendIt(recipient, body);
 });
 
 /*
@@ -115,7 +144,7 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.0.3',
+    applicationVersion: '1.0.4',
     copyright: '© 2023',
     version: 'b14',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',

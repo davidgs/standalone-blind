@@ -49,7 +49,7 @@ export default function Header({
   }, [managing]);
 
   return (
-    <div className="container-fluid">
+    <div className="container-fluid" style={{backgroundColor: '#143866'}}>
       <div
         className="text-center"
         style={{
@@ -57,10 +57,11 @@ export default function Header({
           color: '#81c341',
           width: '100%',
           height: '125px',
+          paddingTop: '10px',
         }}
       >
-        <h1 style={{ paddingTop: '25px !important' }}>Blind Ministry</h1>
-        <div className="row text-center" style={{ paddingTop: '10px' }}>
+        <h1 style={{ paddingTop: '45px !important' }}>Blind Ministry</h1>
+        <div className="row text-center" >
           <div className="col-sm-5" />
           <div className="col-sm-2">
             {managing ? (

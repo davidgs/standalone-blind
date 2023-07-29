@@ -1,7 +1,6 @@
 /* eslint-disable react/no-danger */
 import React, { useEffect, useState } from 'react';
 import { Button, Col, Form, Modal, Row } from 'react-bootstrap';
-import axios from 'axios';
 import { IEmail, IPerson } from '../types';
 
 export default function PersonModal({
@@ -13,7 +12,6 @@ export default function PersonModal({
   show: boolean;
   handleClose: () => void;
 }) {
-  const [deets, setDeets] = useState<IEmail>(details);
   const [directions, setDirections] = useState<string>();
   const [textValue, setTextValue] = useState<string>('');
   // eslint-disable-next-line no-undef
@@ -21,26 +19,22 @@ export default function PersonModal({
   const [map, setMap] = useState<string>();
   const [mapLink, setMapLink] = useState<string>();
   const [sent, setSent] = useState<boolean>(false);
+  const [sendOK, setSendOK] = useState<boolean>(false);
 
-  useEffect(() => {
-    setDeets(details);
-  }, [details]);
 
-  useEffect(() => {
-    setDirections(deets?.directions);
-  }, [deets]);
-
-  useEffect(() => {
-    setMap(deets?.map);
-  }, [deets]);
+  const closeMe = () => {
+    setSendOK(false);
+    setSent(false);
+    handleClose();
+  };
 
   useEffect(() => {
     let dirlink = 'http://maps.google.com/maps/dir/';
-    dirlink += `${deets?.info?.driver.address} `;
-    dirlink += `${deets?.info?.driver.city} `;
-    dirlink += `${deets?.info?.driver.state} `;
-    dirlink += `${deets?.info?.driver.zip}/`;
-    const folks = deets?.info?.riders.map((person: IPerson) => {
+    dirlink += `${details?.info?.driver.address} `;
+    dirlink += `${details?.info?.driver.city} `;
+    dirlink += `${details?.info?.driver.state} `;
+    dirlink += `${details?.info?.driver.zip}/`;
+    const folks = details?.info?.riders.map((person: IPerson) => {
       const addrInfo = `${person.address}\n${person.city}, ${person.state} ${person.zip}`;
       dirlink += `${person.address} ${person.city} ${person.state} ${person.zip}/`;
       const hPhone =
@@ -77,25 +71,34 @@ export default function PersonModal({
     dirlink += '100 W Lochmere Dr Cary NC 27518';
     setMapLink(dirlink?.replaceAll(' ', '+'));
     setFolks(folks);
-  }, [deets]);
+  }, [details]);
 
   const sendit = () => {
     const email = {
-      to: deets?.info?.driver.email,
+      to: details?.info?.driver.email,
       data: document.getElementById('finalEmail')?.innerHTML,
     };
-    axios
-      .post('https://davidgs.com:3001/send-route', JSON.stringify(email))
-      // eslint-disable-next-line promise/always-return
+    window.electronAPI.sendMail(details.info.driver.email, document.getElementById('finalEmail')?.innerHTML || '')
       .then((res) => {
-        setSent(true);
+        if (res) {
+          console.log(res);
+          const ponce = JSON.parse(res);
+          if (ponce.accepted.length > 0){
+            setSendOK(true);
+            setSent(true);
+          } else if (ponce.rejected.length > 0) {
+            setSendOK(false);
+          }
+        }
+
+        console.log(res);
       })
       .catch((err) => {
         console.log(err);
       });
   };
   useEffect(() => {
-    let txt = `<p>Hello ${deets?.info?.driver.name},</p>`;
+    let txt = `<p>Hello ${details?.info?.driver.name},</p>`;
     txt += `<p>Thank you so much for volunteering to drive this month.</p>`;
     txt += `<p>Here are the names, addresses, and phone numbers of the people you will be driving:</p><ul>`;
     rideFolks?.forEach((person: string) => {
@@ -110,10 +113,10 @@ export default function PersonModal({
   return (
     <Modal show={show} onHide={handleClose} size="xl">
       <Modal.Header closeButton>
-        <Modal.Title>Email Route to {deets?.info?.driver.name}</Modal.Title>
+        <Modal.Title>Email Route to {details?.info?.driver.name}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <h1>Route Information for {deets?.info?.driver.name}</h1>
+        <h1>Route Information for {details?.info?.driver.name}</h1>
         <Form noValidate>
           <Row>
             {/* <AddressField /> */}
@@ -132,16 +135,16 @@ export default function PersonModal({
                   d.info.driver.email = e.target.value;
                   return d;
                 })}
-                // readOnly
-                defaultValue={deets?.info?.driver.email}
+                 readOnly
+                defaultValue={details?.info?.driver.email}
               />
             </Col>
             <Col sm={2} />
             <Col sm={4}>
-              <Button variant="primary" onClick={sendit} disabled={sent}>
-                Send
+              <Button variant={!sendOK ? "primary" : "success"}  onClick={sendit} disabled={sent}>
+                {!sendOK ? 'Send' : 'Sent!'}
               </Button>{' '}
-              <Button variant="success" onClick={handleClose}>
+              <Button variant={sendOK ? "success" : "warning"} onClick={closeMe}>
                 Close
               </Button>
             </Col>
