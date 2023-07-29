@@ -93,15 +93,6 @@ function Hello() {
   };
 
   useEffect(() => {
-      carpools.forEach((carp) => {
-        return (
-          console.log('carp change: ', carp.driver.name)
-        );
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carpools]);
-
-  useEffect(() => {
     if (!managePeople) {
       getAll();
     }
@@ -129,6 +120,7 @@ function Hello() {
         setCarpools(sortCarpools(carpools.concat(newCP)));
     }
     if (personType.toLocaleLowerCase() === 'attendee') {
+      console.log('attendee');
       const newAttendees = allAttendees.filter((att) => att._id === id);
       const act = selectedAttendees;
       const th = allAttendees.filter((att) => att._id !== id);
@@ -201,6 +193,10 @@ function Hello() {
         const sd = selectedDrivers;
         newCarpools.forEach((carpool: ICarpool) => {
           sd.push(carpool.driver);
+          removeFromMenu(carpool.driver._id, 'driver');
+          carpool.riders.forEach((rider: IPerson) => {
+            removeFromMenu(rider._id, 'attendee');
+          });
         });
         setSelectedDrivers(SortPeople(sd));
       })
@@ -227,6 +223,13 @@ function Hello() {
     }
   };
 
+  const resetAll = () => {
+    getAll();
+    setSelectedAttendees([]);
+    setSelectedDrivers([]);
+    setCarpools([]);
+  };
+
   return (
     <div>
       <Header callback={setManagePeople} />
@@ -235,6 +238,7 @@ function Hello() {
           drivers={allDrivers}
           attendees={allAttendees}
           removeFromMenuCallback={removeFromMenu}
+          resetCallback={resetAll}
         />
       ) : null}
       {!managePeople ? (
@@ -355,7 +359,7 @@ function Hello() {
             Save All Routes
           </Button>
           &nbsp;
-          <Button variant="primary" onClick={loadRoutes}>
+          <Button variant="primary" onClick={loadRoutes} disabled={carpools.length > 0}>
             Reload last Routes
           </Button>
         </div>

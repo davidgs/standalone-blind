@@ -330,6 +330,65 @@ export default function MyTabList({
                 key={uuidv4()}
               >
                 {riders}
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      marginTop: '5%',
+                      alignContent: 'center',
+                    }}
+                    key={uuidv4()}
+                  >
+                    <h4>Driver:</h4></div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '75%',
+                        marginLeft: '1rem',
+                      }}
+                      key={uuidv4()}
+                    >
+                      <h4>{carp.driver.name}</h4>
+                      <div style={{ textAlign: 'left' }} key={uuidv4()}>
+                        <details id={`details-${carp.driver._id}`}>
+                          <summary>address</summary>
+                          <address>
+                            {carp.driver.address}
+                            <br />
+                            {carp.driver.city}, {carp.driver.state} {carp.driver.zip}
+                          </address>
+                          {carp.driver.homephone !== '' && carp.driver.homephone !== null ? (
+                            <p>
+                              Home:{' '}
+                              <a href={`tel:${carp.driver.homephone}`}>{carp.driver.homephone}</a>
+                            </p>
+                          ) : null}
+                          {carp.driver.cellphone !== '' && carp.driver.cellphone !== null ? (
+                            <p>
+                              Cell:{' '}
+                              <a href={`tel:${carp.driver.cellphone}`}>{carp.driver.cellphone}</a>
+                            </p>
+                          ) : null}
+                          {carp.driver.email !== '' && carp.driver.email !== null ? (
+                            <p>
+                              Email:{' '}
+                              <a href={`mailto:${carp.driver.email}`}>{carp.driver.email}</a>
+                            </p>
+                          ) : null}
+                          {carp.driver.notes !== '' && carp.driver.notes !== null ? (
+                            <p>
+                              <strong>Notes</strong>
+                              {carp.driver.notes}
+                            </p>
+                          ) : null}
+                        </details>
+                      </div>
+
+                  </div>
+                  <hr />
+                </div>
               </div>
 
               <div
