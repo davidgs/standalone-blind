@@ -20,6 +20,7 @@ export default function PersonModal({
   const [mapLink, setMapLink] = useState<string>();
   const [sent, setSent] = useState<boolean>(false);
   const [sendOK, setSendOK] = useState<boolean>(false);
+  const [deets, setDeets] = useState<IEmail>();
 
 
   const closeMe = () => {
@@ -70,7 +71,9 @@ export default function PersonModal({
     });
     dirlink += '100 W Lochmere Dr Cary NC 27518';
     setMapLink(dirlink?.replaceAll(' ', '+'));
-    setFolks(folks);
+    setFolks(folks as string[]);
+    setDirections(details.directions);
+    setMap(details.map);
   }, [details]);
 
   const sendit = () => {
@@ -78,7 +81,7 @@ export default function PersonModal({
       to: details?.info?.driver.email,
       data: document.getElementById('finalEmail')?.innerHTML,
     };
-    window.electronAPI.sendMail(details.info.driver.email, document.getElementById('finalEmail')?.innerHTML || '')
+    window.electronAPI.sendMail(details.info?.driver.email as string, document.getElementById('finalEmail')?.innerHTML || '')
       .then((res) => {
         if (res) {
           console.log(res);
@@ -166,10 +169,10 @@ export default function PersonModal({
             </Col>
           </Row>
           <h2>Map</h2>
-          <div dangerouslySetInnerHTML={{ __html: map }} />
+          <div dangerouslySetInnerHTML={{ __html: map as TrustedHTML }} />
           <hr />
           <h2>Directions</h2>
-          <div dangerouslySetInnerHTML={{ __html: directions }} />
+          <div dangerouslySetInnerHTML={{ __html: directions as TrustedHTML }} />
         </div>
       </Modal.Body>
       <Modal.Footer>

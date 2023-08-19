@@ -86,6 +86,7 @@ export default function MyTabList({
         directions.forEach((dir) => {
           const dirItem = document.createElement('li');
           dirItem.innerHTML = dir;
+          dirItem.setAttribute('key', uuidv4());
           dirList.appendChild(dirItem);
         });
         dirArea.appendChild(dirList);
