@@ -31,7 +31,8 @@ import HelpTxt from './components/HelpTxt';
 import './style.css';
 import DireWarning from './components/DireWarning';
 
-export default function PersonForm({
+export default function
+PersonForm({
   person,
   thesePeople,
   type,
