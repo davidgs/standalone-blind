@@ -33,6 +33,7 @@ import axios from 'axios';
 import PersonForm from '../NewPersonForm';
 import { IPerson, SortPeople } from '../types';
 import DireWarning from './DireWarning';
+import Signer from './signer';
 
 interface TableColumn {
   key: string;
@@ -65,29 +66,59 @@ export default function PersonTable() {
 
   /* Get all drivers and attendees from the database */
   const getAll = () => {
-    axios
-      .get(`https://davidgs.com:3001/api/Drivers`)
-      // eslint-disable-next-line promise/always-return
-      .then((response) => {
-        const newDrivers = response.data;
-        setAllDrivers(SortPeople(newDrivers as IPerson[]) as IPerson[]);
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.log(error);
-      });
-
-    axios
-      .get(`https://davidgs.com:3001/api/Attendees`)
-      // eslint-disable-next-line promise/always-return
-      .then((response) => {
-        const newAtts = response.data;
-        setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.log(error);
-      });
+    // const ts = Date.now();
+    // const sig = Signer('');
+    window.electronAPI.signRequest('')
+     .then((response) => {
+        const r = JSON.parse(response);
+        console.log('response: ', response);
+        const ts = parseInt(r.ts);
+        const sig = r.signature;
+        axios
+          .get(`https://blind-ministries.org/api/Drivers`
+          , {
+            headers: {
+              'x-request-timestamp': ts,
+              'X-Signature-SHA256': sig,
+            },
+          }
+          )
+          // eslint-disable-next-line promise/always-return
+          .then((response) => {
+            const newDrivers = response.data;
+            setAllDrivers(SortPeople(newDrivers as IPerson[]) as IPerson[]);
+          })
+          .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log(error);
+          });
+          axios
+            .get(`https://blind-ministries.org/api/Attendees`, {
+              headers: {
+                'x-request-timestamp': ts,
+                'X-Signature-SHA256': sig,
+              },
+            }
+            )
+            // eslint-disable-next-line promise/always-return
+            .then((response) => {
+              const newAtts = response.data;
+              setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
+            })
+            .catch((error) => {
+              // eslint-disable-next-line no-console
+              console.log(error);
+            })
+            .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log(error);
+          });
+      }
+    )
+    .catch((error) => {
+      // eslint-disable-next-line no-console
+      console.log(error);
+    });
   };
 
   useEffect(() => {
@@ -149,10 +180,19 @@ export default function PersonTable() {
     if (p === null) {
       return;
     }
+    // const ts = Date.now();
+    // const sig = Signer('');
     if (thisType === 'drivers') {
       axios
         // eslint-disable-next-line no-underscore-dangle
-        .post(`https://davidgs.com:3001/api/delete/Drivers/${p._id}`)
+        .post(`https://blind-ministries.org/api/delete/Drivers/${p._id}`
+        // , {
+        //   headers: {
+        //     'x-request-timestamp': ts,
+        //     'X-Signature-SHA256': sig,
+        //   },
+        // }
+        )
         // eslint-disable-next-line promise/always-return
         .then(() => {
           getAll();
@@ -164,7 +204,14 @@ export default function PersonTable() {
     } else {
       axios
         // eslint-disable-next-line no-underscore-dangle
-        .post(`https://davidgs.com:3001/api/delete/Attendees/${p._id}`)
+        .post(`https://blind-ministries.org/api/delete/Attendees/${p._id}`
+        // , {
+        //   headers: {
+        //     'x-request-timestamp': ts,
+        //     'X-Signature-SHA256': sig,
+        //   },
+        // }
+        )
         // eslint-disable-next-line promise/always-return
         .then(() => {
           getAll();

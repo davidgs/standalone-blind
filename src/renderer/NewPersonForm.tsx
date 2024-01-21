@@ -30,6 +30,7 @@ import HelpTxt from './components/HelpTxt';
 // import AddressField from "./components/AddressField";
 import './style.css';
 import DireWarning from './components/DireWarning';
+import Signer from './components/signer';
 
 export default function
 PersonForm({
@@ -153,11 +154,26 @@ PersonForm({
           lat: location.lat(),
           lng: location.lng(),
         };
+        // const ts = Date.now();
+        // const sig = Signer(JSON.stringify(newP));
+        window.electronAPI.signRequest(JSON.stringify(newP))
+     .then((response) => {
+        const r = JSON.parse(response);
+        console.log('response: ', response);
+        const ts = parseInt(r.ts);
+        const sig = r.signature;
         axios
           .post(
             // eslint-disable-next-line no-underscore-dangle
-            `https://davidgs.com:3001/api/${dbPrefix}${type}`,
-            JSON.stringify(newP)
+            `https://blind-ministries.org/api/${dbPrefix}${type}`, JSON.stringify(newP)
+            // ,
+            // {
+            //   headers: {
+            //     'x-request-timestamp': ts,
+            //     'X-Signature-SHA256': sig,
+            //   },
+            // },
+
           )
           // eslint-disable-next-line promise/always-return
           .then((res) => {
@@ -168,6 +184,10 @@ PersonForm({
             console.log(err);
           });
         setShow(!show);
+      }
+      ).catch((err) => {
+        console.log('error: ', err);
+      });
       } else {
         // eslint-disable-next-line no-alert
         alert(`Geocode was not successful for the following reason: ${status}`);
@@ -182,11 +202,25 @@ PersonForm({
     if (newPerson) {
       geocodeAddress();
     } else {
+      // const ts = Date.now();
+      // const sig = Signer(JSON.stringify(thisPerson));
+      window.electronAPI.signRequest(JSON.stringify(thisPerson))
+     .then((response) => {
+        const r = JSON.parse(response);
+        console.log('response: ', response);
+        const ts = parseInt(r.ts);
+        const sig = r.signature;
       axios
         .post(
           // eslint-disable-next-line no-underscore-dangle
-          `https://davidgs.com:3001/api/update/${dbPrefix}${type}/${thisPerson?._id}`,
-          JSON.stringify(thisPerson)
+          `https://blind-ministries.org/api/update/${dbPrefix}${type}/${thisPerson?._id}`, JSON.stringify(thisPerson)
+          // ,
+          // {
+          //   headers: {
+          //     'x-request-timestamp': ts,
+          //     'X-Signature-SHA256': sig,
+          //   },
+          // },
         )
         // eslint-disable-next-line promise/always-return
         .then((res) => {
@@ -196,6 +230,10 @@ PersonForm({
           // eslint-disable-next-line no-console
           console.log(err);
         });
+      })
+      .catch((err) => {
+        console.log('error: ', err);
+      });
     }
     setShow(!show);
   };

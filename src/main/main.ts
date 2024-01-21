@@ -36,12 +36,14 @@ import Store from 'electron-store';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import  { Hmac, createHmac } from 'crypto';
 import nodemailer, {SentMessageInfo} from 'nodemailer';
 
 const electronApp = require('electron').app;
 
 const store = new Store();
-
+console.log(`Store Path: ${store.path}`);
+console.log(`App Path: ${electronApp.getAppPath()}`);
 
 var transporter = nodemailer.createTransport({
  service: 'gmail',
@@ -51,16 +53,16 @@ var transporter = nodemailer.createTransport({
     }
 });
 
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.checkForUpdates();
-  }
-}
-const server = 'https://blind-server.davidgs.com/';
-const url = `${server}/update/${process.platform}/${app.getVersion()}`;
-const up = autoUpdater;
-up.setFeedURL({ url });
+// class AppUpdater {
+//   constructor() {
+//     log.transports.file.level = 'info';
+//     autoUpdater.checkForUpdates();
+//   }
+// }
+// const server = 'https://blind-server.davidgs.com/';
+// const url = `${server}/update/${process.platform}/${app.getVersion()}`;
+// const up = autoUpdater;
+// up.setFeedURL({ url });
 
 /*
  * get the params from the last set of routes
@@ -68,6 +70,24 @@ up.setFeedURL({ url });
  */
 ipcMain.handle('get-last-routes', () => {
   return JSON.stringify(store.get('blind-routes', null));
+});
+
+function Signer(contents: string) : {signature: string, ts: string} | null {
+const ts = Date.now();
+    const sig_basestring = `V0:${ts}:${contents}`;
+    let hm;
+    if (process.env.BLIND_SECRET !== undefined) {
+      hm = createHmac('sha256', process.env.BLIND_SECRET);
+      hm.update(sig_basestring);
+      const my_signature = hm.digest('hex');
+      return {signature: my_signature, ts: ts.toString()};
+    } else {
+      return null;
+    }
+  };
+
+ipcMain.handle('sign-request', (e: Event, contents: string) => {
+  return JSON.stringify(Signer(contents));
 });
 
 async function SendIt(recipient: string, body: string) {
@@ -99,9 +119,9 @@ ipcMain.handle('save-last-routes', (e: Event, routes: string) => {
   return JSON.stringify(store.get('blind-routes', null));
 });
 
-setInterval(() => {
-  up.checkForUpdates();
-}, 1.8e6);
+// setInterval(() => {
+//   up.checkForUpdates();
+// }, 1.8e6);
 let mainWindow: BrowserWindow | null = null;
 
 if (process.env.NODE_ENV === 'production') {
@@ -144,9 +164,9 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.0.5',
+    applicationVersion: '1.0.6',
     copyright: '© 2023',
-    version: 'b15',
+    version: 'b16',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
     authors: ['David G. Simmons'],
     website: 'https://github.com/davidgs/standalone-blind',
@@ -194,7 +214,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  new AppUpdater();
+  // new AppUpdater();
 };
 
 /**

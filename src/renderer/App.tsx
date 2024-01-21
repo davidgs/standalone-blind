@@ -37,6 +37,7 @@ import { IPerson, ICarpool, SortPeople } from './types';
 import 'react-tabs/style/react-tabs.css';
 import MyTabList from './components/MyTabList';
 import PersonTable from './components/PersonTable';
+import Signer from './components/signer';
 
 function Hello() {
   const [allDrivers, setAllDrivers] = React.useState<IPerson[]>([]);
@@ -60,6 +61,8 @@ function Hello() {
     return sorted;
   };
 
+
+
   /* Remove a person from a carpool
      @param e - the event that triggered the removal
    */
@@ -80,15 +83,43 @@ function Hello() {
 
   /* Get all drivers and attendees from the database */
   const getAll = () => {
-    axios.get(`https://davidgs.com:3001/api/${driversDB}`).then((response) => {
-      const newDrivers = response.data;
-      setAllDrivers(SortPeople(newDrivers as IPerson[]) as IPerson[]);
-    });
-    axios
-      .get(`https://davidgs.com:3001/api/${attendeesDB}`)
-      .then((response) => {
-        const newAtts = response.data;
-        setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
+    window.electronAPI.signRequest('')
+     .then((response) => {
+        const r = JSON.parse(response);
+        console.log('response: ', response);
+        const ts = parseInt(r.ts);
+        const sig = r.signature;
+        axios
+          .get(`https://blind-ministries.org/api/${driversDB}`
+          , {
+            headers: {
+              'x-request-timestamp': ts,
+              'X-Signature-SHA256': sig,
+            },
+          }
+          )
+          .then((response) => {
+            const newDrivers = response.data;
+            setAllDrivers(SortPeople(newDrivers as IPerson[]) as IPerson[]);
+          });
+        axios
+          .get(`https://blind-ministries.org/api/${attendeesDB}`
+          ,{
+            headers: {
+              'x-request-timestamp': ts,
+              'X-Signature-SHA256': sig,
+            },
+          }
+          )
+          .then((response) => {
+            const newAtts = response.data;
+            setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
+          });
+      }
+      )
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.log('getAll error: ', error);
       });
   };
 
@@ -108,7 +139,7 @@ function Hello() {
     if (personType.toLocaleLowerCase() === 'driver') {
       // find in allDrivers
       const newDriver = allDrivers.find((driver) => driver._id === id);
-      console.log('newDriver: ', newDriver?.name)
+      console.log('newDriver: ', newDriver?.name);
 
       // remove from allDrivers
       const th = allDrivers.filter((driver) => driver._id !== id);
@@ -116,8 +147,8 @@ function Hello() {
       setAllDrivers(th);
       setSelectedDrivers(selectedDrivers.concat(newDriver as IPerson));
       // get the current carpools
-        const newCP = { driver: newDriver as IPerson, riders: [] as IPerson[] };
-        setCarpools(sortCarpools(carpools.concat(newCP)));
+      const newCP = { driver: newDriver as IPerson, riders: [] as IPerson[] };
+      setCarpools(sortCarpools(carpools.concat(newCP)));
     }
     if (personType.toLocaleLowerCase() === 'attendee') {
       console.log('attendee');
@@ -140,9 +171,7 @@ function Hello() {
     driver: IPerson | null | undefined
   ) => {
     const cp = carpools;
-    const newCarpool = cp.find(
-      (carpool) => carpool.driver._id === driver?._id
-    );
+    const newCarpool = cp.find((carpool) => carpool.driver._id === driver?._id);
     if (newCarpool !== undefined) {
       newCarpool.riders.push(rider as IPerson);
       const cps = cp.filter((carpool) => carpool.driver._id !== driver?._id);
@@ -185,7 +214,7 @@ function Hello() {
     window.electronAPI
       .getLastRoutes()
       .then((response) => {
-        if (response === "null") {
+        if (response === 'null') {
           return;
         }
         const newCarpools = JSON.parse(response);
@@ -264,7 +293,11 @@ function Hello() {
           >
             <h2>Drivers</h2>
           </div>
-          <MyTabList carpools={carpools} removePerson={removePerson} removeDriver={removeDrive} />
+          <MyTabList
+            carpools={carpools}
+            removePerson={removePerson}
+            removeDriver={removeDrive}
+          />
         </div>
       ) : null}
       {/* All the Attendees stuff */}
@@ -359,7 +392,11 @@ function Hello() {
             Save All Routes
           </Button>
           &nbsp;
-          <Button variant="primary" onClick={loadRoutes} disabled={carpools.length > 0}>
+          <Button
+            variant="primary"
+            onClick={loadRoutes}
+            disabled={carpools.length > 0}
+          >
             Reload last Routes
           </Button>
         </div>

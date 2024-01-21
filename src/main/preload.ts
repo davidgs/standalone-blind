@@ -29,6 +29,7 @@ export type electronAPI = {
   getLastRoutes: () => Promise<string>;
   saveLastRoutes: (routes: string) => Promise<string>;
   sendMail: (recipient: string, body: string) => Promise<string>;
+  signRequest: (contents: string) => Promise<string>;
 };
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -37,6 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('save-last-routes', routes),
   sendMail: (recipient: string, body: string) =>
     ipcRenderer.invoke('send-mail', recipient, body),
+  signRequest: (contents: string) => ipcRenderer.invoke('sign-request', contents),
 });
 
 declare global {
@@ -45,6 +47,7 @@ declare global {
       getLastRoutes: () => Promise<string>;
       saveLastRoutes: (routes: string) => Promise<string>;
       sendMail: (recipient: string, body: string) => Promise<string>;
+      signRequest: (contents: string) => Promise<string>;
     };
   }
 }
