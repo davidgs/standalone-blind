@@ -21,7 +21,7 @@ node_modules
 release/app/dist
 release/build
 .erb/dll
-
+.vscode
 .idea
 npm-debug.log.*
 *.css.d.ts
