@@ -34,6 +34,7 @@ import PersonForm from '../NewPersonForm';
 import { IPerson, SortPeople } from '../types';
 import DireWarning from './DireWarning';
 import Signer from './signer';
+import { parse } from 'path';
 
 interface TableColumn {
   key: string;
@@ -71,15 +72,12 @@ export default function PersonTable() {
     window.electronAPI.signRequest('')
      .then((response) => {
         const r = JSON.parse(response);
-        console.log('response: ', response);
-        const ts = parseInt(r.ts);
-        const sig = r.signature;
         axios
           .get(`https://blind-ministries.org/api/Drivers`
           , {
             headers: {
-              'x-request-timestamp': ts,
-              'X-Signature-SHA256': sig,
+              'x-request-timestamp': parseInt(r.ts),
+              'X-Signature-SHA256': r.signature,
             },
           }
           )
@@ -95,8 +93,8 @@ export default function PersonTable() {
           axios
             .get(`https://blind-ministries.org/api/Attendees`, {
               headers: {
-                'x-request-timestamp': ts,
-                'X-Signature-SHA256': sig,
+                'x-request-timestamp': parseInt(r.ts),
+                'X-Signature-SHA256': r.signature,
               },
             }
             )
@@ -183,42 +181,54 @@ export default function PersonTable() {
     // const ts = Date.now();
     // const sig = Signer('');
     if (thisType === 'drivers') {
-      axios
+      window.electronAPI.signRequest('')
+        .then((response) => {
+          const r = JSON.parse(response);
+          axios
         // eslint-disable-next-line no-underscore-dangle
-        .post(`https://blind-ministries.org/api/delete/Drivers/${p._id}`
-        // , {
-        //   headers: {
-        //     'x-request-timestamp': ts,
-        //     'X-Signature-SHA256': sig,
-        //   },
-        // }
-        )
+            .post(`https://blind-ministries.org/api/delete/Drivers/${p._id}`, '', {
+              headers: {
+                'x-request-timestamp': parseInt(r.ts),
+                'X-Signature-SHA256': r.signature,
+              },
+            })
         // eslint-disable-next-line promise/always-return
-        .then(() => {
-          getAll();
+            .then(() => {
+              getAll();
+            })
+            .catch((error) => {
+          // eslint-disable-next-line no-console
+              console.log(error);
+            });
         })
         .catch((error) => {
           // eslint-disable-next-line no-console
           console.log(error);
         });
     } else {
-      axios
-        // eslint-disable-next-line no-underscore-dangle
-        .post(`https://blind-ministries.org/api/delete/Attendees/${p._id}`
-        // , {
-        //   headers: {
-        //     'x-request-timestamp': ts,
-        //     'X-Signature-SHA256': sig,
-        //   },
-        // }
-        )
-        // eslint-disable-next-line promise/always-return
-        .then(() => {
-          getAll();
+      window.electronAPI.signRequest('')
+        .then((response) => {
+          const r = JSON.parse(response);
+          axios
+            // eslint-disable-next-line no-underscore-dangle
+            .post(`https://blind-ministries.org/api/delete/Attendees/${p._id}`, '', {
+              headers: {
+                'x-request-timestamp': parseInt(r.ts),
+                'X-Signature-SHA256': r.signature,
+              },
+            })
+            // eslint-disable-next-line promise/always-return
+            .then(() => {
+              getAll();
+            })
+            .catch((error) => {
+            // eslint-disable-next-line no-console
+              console.log(error);
+            });
         })
         .catch((error) => {
           // eslint-disable-next-line no-console
-          console.log(error);
+            console.log(error);
         });
     }
     setTType('');

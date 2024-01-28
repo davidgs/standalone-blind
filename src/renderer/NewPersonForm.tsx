@@ -31,6 +31,7 @@ import HelpTxt from './components/HelpTxt';
 import './style.css';
 import DireWarning from './components/DireWarning';
 import Signer from './components/signer';
+import { parse } from 'path';
 
 export default function
 PersonForm({
@@ -159,20 +160,17 @@ PersonForm({
         window.electronAPI.signRequest(JSON.stringify(newP))
      .then((response) => {
         const r = JSON.parse(response);
-        console.log('response: ', response);
-        const ts = parseInt(r.ts);
-        const sig = r.signature;
         axios
           .post(
             // eslint-disable-next-line no-underscore-dangle
             `https://blind-ministries.org/api/${dbPrefix}${type}`, JSON.stringify(newP)
-            // ,
-            // {
-            //   headers: {
-            //     'x-request-timestamp': ts,
-            //     'X-Signature-SHA256': sig,
-            //   },
-            // },
+            ,
+            {
+              headers: {
+                'x-request-timestamp': parseInt(r.ts),
+                'X-Signature-SHA256': r.signature,
+              },
+            },
 
           )
           // eslint-disable-next-line promise/always-return
@@ -205,22 +203,21 @@ PersonForm({
       // const ts = Date.now();
       // const sig = Signer(JSON.stringify(thisPerson));
       window.electronAPI.signRequest(JSON.stringify(thisPerson))
-     .then((response) => {
-        const r = JSON.parse(response);
-        console.log('response: ', response);
-        const ts = parseInt(r.ts);
-        const sig = r.signature;
-      axios
+        .then((response) => {
+          const r = JSON.parse(response);
+          console.log('response: ', response);
+          const ts = parseInt(r.ts);
+          const sig = r.signature;
+          axios
         .post(
           // eslint-disable-next-line no-underscore-dangle
-          `https://blind-ministries.org/api/update/${dbPrefix}${type}/${thisPerson?._id}`, JSON.stringify(thisPerson)
-          // ,
-          // {
-          //   headers: {
-          //     'x-request-timestamp': ts,
-          //     'X-Signature-SHA256': sig,
-          //   },
-          // },
+          `https://blind-ministries.org/api/update/${dbPrefix}${type}/${thisPerson?._id}`, JSON.stringify(thisPerson),
+          {
+            headers: {
+              'x-request-timestamp': parseInt(r.ts),
+              'X-Signature-SHA256': r.signature,
+            },
+          },
         )
         // eslint-disable-next-line promise/always-return
         .then((res) => {
