@@ -86,18 +86,13 @@ function Hello() {
     window.electronAPI.signRequest('')
      .then((response) => {
         const r = JSON.parse(response);
-        console.log('response: ', response);
-        const ts = parseInt(r.ts);
-        const sig = r.signature;
         axios
-          .get(`https://blind-ministries.org/api/${driversDB}`
-          , {
+          .get(`https://blind-ministries.org/api/${driversDB}`, {
             headers: {
-              'x-request-timestamp': ts,
-              'X-Signature-SHA256': sig,
+              'x-request-timestamp': parseInt(r.ts),
+              'X-Signature-SHA256': r.signature,
             },
-          }
-          )
+          })
           .then((response) => {
             const newDrivers = response.data;
             setAllDrivers(SortPeople(newDrivers as IPerson[]) as IPerson[]);
@@ -106,14 +101,18 @@ function Hello() {
           .get(`https://blind-ministries.org/api/${attendeesDB}`
           ,{
             headers: {
-              'x-request-timestamp': ts,
-              'X-Signature-SHA256': sig,
+              'x-request-timestamp': r.parseInt(r.ts),
+              'X-Signature-SHA256': r.signature,
             },
           }
           )
           .then((response) => {
             const newAtts = response.data;
             setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
+          })
+          .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log('getAll error: ', error);
           });
       }
       )

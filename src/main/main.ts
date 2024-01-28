@@ -44,25 +44,15 @@ const electronApp = require('electron').app;
 const store = new Store();
 console.log(`Store Path: ${store.path}`);
 console.log(`App Path: ${electronApp.getAppPath()}`);
-
-var transporter = nodemailer.createTransport({
- service: 'gmail',
- auth: {
-        user: 'blindministryRLC@gmail.com',
-        pass: 'lyrjciojjnfaccps'
-    }
+const transporter = nodemailer.createTransport({
+  host: "blind-ministries.org",
+  port: 465,
+  secure: true,
+  auth: {
+    user: "routing@blind-ministries.org",
+    pass: process.env.BLIND_PASSWD,
+  },
 });
-
-// class AppUpdater {
-//   constructor() {
-//     log.transports.file.level = 'info';
-//     autoUpdater.checkForUpdates();
-//   }
-// }
-// const server = 'https://blind-server.davidgs.com/';
-// const url = `${server}/update/${process.platform}/${app.getVersion()}`;
-// const up = autoUpdater;
-// up.setFeedURL({ url });
 
 /*
  * get the params from the last set of routes
@@ -75,6 +65,7 @@ ipcMain.handle('get-last-routes', () => {
 function Signer(contents: string) : {signature: string, ts: string} | null {
 const ts = Date.now();
     const sig_basestring = `V0:${ts}:${contents}`;
+    console.log(`Sig Base String: ${sig_basestring}`);
     let hm;
     if (process.env.BLIND_SECRET !== undefined) {
       hm = createHmac('sha256', process.env.BLIND_SECRET);
@@ -92,12 +83,12 @@ ipcMain.handle('sign-request', (e: Event, contents: string) => {
 
 async function SendIt(recipient: string, body: string) {
   const mailOptions = {
-    from: 'blindministryRLC@gmail.com', // sender address
+    from: 'routing@blind-ministries.org', // sender address
     name: 'Blind Ministry Drivers',
     to: recipient, // list of receivers
-    replyTo: 'annette.langefeld1@gmail.com',
+    replyTo: 'routing@blind-ministries.org',
     // cc: 'annette.langefeld1@gmail.com',
-    bcc: 'davidgs@me.com',
+    cc: 'routing@blind-ministries.org',
     subject: 'Blind Ministry Routing', // Subject line
     html: body, // plain text body
   };

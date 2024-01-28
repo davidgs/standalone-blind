@@ -114,7 +114,7 @@ export default function PersonModal({
   }, [rideFolks]);
 
   return (
-    <Modal show={show} onHide={handleClose} size="xl">
+    <Modal size="xl" show={show} onHide={handleClose} >
       <Modal.Header closeButton>
         <Modal.Title>Email Route to {details?.info?.driver.name}</Modal.Title>
       </Modal.Header>
