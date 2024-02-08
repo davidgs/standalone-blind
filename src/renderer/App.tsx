@@ -61,8 +61,6 @@ function Hello() {
     return sorted;
   };
 
-
-
   /* Remove a person from a carpool
      @param e - the event that triggered the removal
    */
@@ -83,8 +81,9 @@ function Hello() {
 
   /* Get all drivers and attendees from the database */
   const getAll = () => {
-    window.electronAPI.signRequest('')
-     .then((response) => {
+    window.electronAPI
+      .signRequest('')
+      .then((response) => {
         const r = JSON.parse(response);
         axios
           .get(`https://blind-ministries.org/api/${driversDB}`, {
@@ -98,24 +97,22 @@ function Hello() {
             setAllDrivers(SortPeople(newDrivers as IPerson[]) as IPerson[]);
           });
         axios
-          .get(`https://blind-ministries.org/api/${attendeesDB}`
-          ,{
+          .get(`https://blind-ministries.org/api/${attendeesDB}`, {
             headers: {
-              'x-request-timestamp': r.parseInt(r.ts),
+              'x-request-timestamp': parseInt(r.ts),
               'X-Signature-SHA256': r.signature,
             },
-          }
-          )
+          })
           .then((response) => {
             const newAtts = response.data;
+            console.log('newAtts: ', newAtts);
             setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
           })
           .catch((error) => {
             // eslint-disable-next-line no-console
             console.log('getAll error: ', error);
           });
-      }
-      )
+      })
       .catch((error) => {
         // eslint-disable-next-line no-console
         console.log('getAll error: ', error);
