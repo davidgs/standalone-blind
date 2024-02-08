@@ -155,7 +155,7 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.0.6',
+    applicationVersion: '1.0.7',
     copyright: '© 2023',
     version: 'b16',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
