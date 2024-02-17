@@ -42,15 +42,13 @@ import nodemailer, {SentMessageInfo} from 'nodemailer';
 const electronApp = require('electron').app;
 
 const store = new Store();
-console.log(`Store Path: ${store.path}`);
-console.log(`App Path: ${electronApp.getAppPath()}`);
 const transporter = nodemailer.createTransport({
   host: "blind-ministries.org",
   port: 465,
   secure: true,
   auth: {
     user: "routing@blind-ministries.org",
-    pass: process.env.BLIND_PASSWD,
+    pass: store.get("BLIND_PASSWD"),
   },
 });
 
@@ -67,8 +65,9 @@ const ts = Date.now();
     const sig_basestring = `V0:${ts}:${contents}`;
     console.log(`Sig Base String: ${sig_basestring}`);
     let hm;
-    if (process.env.BLIND_SECRET !== undefined) {
-      hm = createHmac('sha256', process.env.BLIND_SECRET);
+    const pw = store.get("BLIND_SECRET");
+    if (pw) {
+      hm = createHmac('sha256', pw);
       hm.update(sig_basestring);
       const my_signature = hm.digest('hex');
       return {signature: my_signature, ts: ts.toString()};
@@ -155,9 +154,9 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.0.7',
+    applicationVersion: '1.0.8',
     copyright: '© 2023',
-    version: 'b16',
+    version: 'b23',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
     authors: ['David G. Simmons'],
     website: 'https://github.com/davidgs/standalone-blind',
