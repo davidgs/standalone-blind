@@ -28,8 +28,12 @@ jobs:
           cache: npm
 
       - name: Install and build
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          BLIND_SECRET: ${{ secrets.BLIND_SECRET }}
+          BLIND_PASSWD: ${{ secrets.BLIND_PASSWD }}
         run: |
-          npm install --force
+          npm ci
           npm run postinstall
           npm run build
 

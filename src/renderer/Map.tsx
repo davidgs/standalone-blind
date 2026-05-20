@@ -21,19 +21,13 @@
  * SOFTWARE.
  */
 import { useEffect, useState } from 'react';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap } from '@react-google-maps/api';
 import { IPerson, ChurchPlace } from './types';
+import { useGoogleMaps } from './GoogleMapsProvider';
+import { GOOGLE_MAP_ID } from './googleMapsConfig';
 
 import './App.css';
 import PlaceInfo from './map-components/Places';
-
-const gLibraries: (
-  | 'drawing'
-  | 'geometry'
-  | 'localContext'
-  | 'places'
-  | 'visualization'
-)[] = ['places'];
 
 export default function Map({
   drivers,
@@ -49,11 +43,7 @@ export default function Map({
     driver: IPerson | null | undefined
   ) => void;
 }) {
-  /** Load the Google Maps library * */
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: 'AIzaSyB6NXzTC1jKA4cQuBaTNLAun7pRFApVSbc',
-    libraries: gLibraries,
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
   const [mapDrivers, setMapDrivers] = useState<IPerson[]>(drivers);
   const [mapAttendees, setMapAttendees] = useState<IPerson[]>(attendees);
@@ -94,12 +84,12 @@ export default function Map({
     zoom: 12,
   };
 
-  const options = {
+  const options: google.maps.MapOptions = {
     disableDefaultUI: true,
     zoomControl: true,
-    mapContainerStyle: { mapContainerStyle },
     center: defaultProps.center,
     zoom: 11,
+    mapId: GOOGLE_MAP_ID,
   };
 
   const renderMap = () => {

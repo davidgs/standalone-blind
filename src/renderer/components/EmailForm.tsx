@@ -77,11 +77,15 @@ export default function PersonModal({
   }, [details]);
 
   const sendit = () => {
+    if (!details?.info?.driver.email) {
+      setSendOK(false);
+      return;
+    }
     const email = {
-      to: details?.info?.driver.email,
+      to: details.info.driver.email,
       data: document.getElementById('finalEmail')?.innerHTML,
     };
-    window.electronAPI.sendMail(details.info?.driver.email as string, document.getElementById('finalEmail')?.innerHTML || '')
+    window.electronAPI.sendMail(details.info.driver.email as string, document.getElementById('finalEmail')?.innerHTML || '')
       .then((res) => {
         if (res) {
           console.log(res);
@@ -104,7 +108,11 @@ export default function PersonModal({
     let txt = `<p>Hello ${details?.info?.driver.name},</p>`;
     txt += `<p>Thank you so much for volunteering to drive this month.</p>`;
     txt += `<p>Here are the names, addresses, and phone numbers of the people you will be driving:</p><ul>`;
-    rideFolks?.forEach((person: string) => {
+    const riders = rideFolks as string[];
+    if (!riders || riders.length === 0) {
+      return;
+    }
+    riders.forEach((person: string) => {
       txt += `<li>${person}</li>`;
     });
     txt += `</ul>
@@ -133,11 +141,13 @@ export default function PersonModal({
                 type="email"
                 placeholder="Email address"
                 name="email"
-                onChange={(e) => setDeets((prevDeets) => {
-                  const d = {...prevDeets};
-                  d.info.driver.email = e.target.value;
-                  return d;
-                })}
+                onChange={(e) =>
+                  setDeets((prevDeets) => {
+                    const d = { ...(prevDeets ?? details) };
+                    if (d.info?.driver) d.info.driver.email = e.target.value;
+                    return d;
+                  })
+                }
                  readOnly
                 defaultValue={details?.info?.driver.email}
               />

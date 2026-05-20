@@ -31,6 +31,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
+import dotenv from 'dotenv';
 import { app, BrowserWindow, shell, autoUpdater, ipcMain } from 'electron';
 import Store from 'electron-store';
 import log from 'electron-log';
@@ -42,6 +43,23 @@ import nodemailer, {SentMessageInfo} from 'nodemailer';
 const electronApp = require('electron').app;
 
 const store = new Store();
+
+/** Load .env when running unpackaged; CI/production builds bake secrets via webpack. */
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+}
+
+function initSecretsFromEnv(): void {
+  if (process.env.BLIND_SECRET) {
+    store.set('BLIND_SECRET', process.env.BLIND_SECRET);
+  }
+  if (process.env.BLIND_PASSWD) {
+    store.set('BLIND_PASSWD', process.env.BLIND_PASSWD);
+  }
+}
+
+initSecretsFromEnv();
+
 const transporter = nodemailer.createTransport({
   host: "blind-ministries.org",
   port: 465,
@@ -66,6 +84,7 @@ const ts = Date.now();
     console.log(`Sig Base String: ${sig_basestring}`);
     let hm;
     const pw = store.get("BLIND_SECRET");
+    console.log(`Secret: ${pw}`)
     if (pw) {
       hm = createHmac('sha256', pw);
       hm.update(sig_basestring);
@@ -154,9 +173,9 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.0.8',
+    applicationVersion: '1.1.0',
     copyright: '© 2023',
-    version: 'b23',
+    version: '1.1.0',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
     authors: ['David G. Simmons'],
     website: 'https://github.com/davidgs/standalone-blind',

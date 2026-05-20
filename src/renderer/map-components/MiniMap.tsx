@@ -20,170 +20,138 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-undef */
-/* eslint-disable no-underscore-dangle */
-import { useEffect, useState, useRef } from 'react';
-import {
-  GoogleMap,
-  DirectionsRenderer,
-  DirectionsService,
-} from '@react-google-maps/api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { GoogleMap } from '@react-google-maps/api';
+import { useGoogleMaps } from '../GoogleMapsProvider';
+import { GOOGLE_MAP_ID } from '../googleMapsConfig';
 import { ICarpool, ChurchPlace } from '../types';
 
 import '../App.css';
-import MiniPlaceInfo from './MiniPlaces';
 
-export default function Map({
+function buildDirectionsFromRoute(route: google.maps.routes.Route): string[] {
+  const dir: string[] = [];
+  route.legs?.forEach((leg) => {
+    leg.steps?.forEach((step) => {
+      if (step.instructions) dir.push(step.instructions);
+    });
+  });
+  return dir;
+}
+
+function clearPolylines(polylines: google.maps.Polyline[]) {
+  polylines.forEach((polyline) => polyline.setMap(null));
+}
+
+export default function MiniMap({
   carpool,
   callback,
 }: {
   carpool: ICarpool;
   callback: (directions: string[] | null, id: string | null) => void;
 }) {
+  const { isLoaded, loadError } = useGoogleMaps();
   const [mapCarpool, setMapCarpool] = useState<ICarpool>(carpool);
-  const [id, setId] = useState<string>('');
-  const [response, setResponse] = useState<google.maps.DirectionsResult>();
-  const [respStatus, setRespStatus] = useState<boolean>(false);
-  const [rendered, setRendered] = useState<boolean>(false);
-  const [waypoints, setWaypoints] = useState<google.maps.DirectionsWaypoint[]>(
-    []
-  );
-  const [drivingOptions, setDrivingOptions] =
-    useState<google.maps.DirectionsRequest>();
-  const map = useRef<google.maps.Map | null>(null);
-  const [drivingDirections, setDrivingDirections] = useState<string[]>([]);
-  const panel = useRef<HTMLDivElement | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const polylinesRef = useRef<google.maps.Polyline[]>([]);
 
-  // without height and width you won't see a map
   const miniMapContainerStyle = {
     height: '400px',
     width: '650px',
     margin: 'auto',
     paddingRight: '5px',
   };
-  // RLC is the default center
-  const defaultProps = {
+
+  const options: google.maps.MapOptions = {
+    disableDefaultUI: true,
+    zoomControl: true,
     center: {
       lat: ChurchPlace.location.lat,
       lng: ChurchPlace.location.lng,
     },
-    zoom: 12,
-  };
-
-  const options = {
-    disableDefaultUI: true,
-    zoomControl: true,
-    mapContainerStyle: { miniMapContainerStyle },
-    center: defaultProps.center,
     zoom: 11,
+    mapId: GOOGLE_MAP_ID,
   };
-
-  const directionsService = new google.maps.DirectionsService();
-  const directionsRenderer = new google.maps.DirectionsRenderer();
-  directionsRenderer.setPanel(
-    document.getElementById(
-      `directions-${mapCarpool.driver._id}`
-    ) as HTMLElement
-  );
-
-  function makeWaypoints(carp?: ICarpool) {
-    const wayp: google.maps.DirectionsWaypoint[] = [];
-    carp?.riders?.forEach((att) => {
-      wayp.push({
-        location: { lat: att.location.lat, lng: att.location.lng },
-        stopover: true,
-      });
-    });
-    setWaypoints(wayp);
-    setDrivingOptions({
-      origin: mapCarpool.driver.location,
-      destination: ChurchPlace.location,
-      travelMode: google.maps.TravelMode.DRIVING,
-      optimizeWaypoints: true,
-    });
-  }
 
   useEffect(() => {
-    if (carpool === undefined) return;
     setMapCarpool(carpool);
-    makeWaypoints(carpool);
-    setRendered(false);
-    setId(carpool?.driver?._id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carpool]);
 
-  const buildDirections = (resp: google.maps.DirectionsResult) => {
-    // `directions-${carp.driver._id}`
-    const dir: string[] = [];
-    resp?.routes[0]?.legs[0]?.steps?.forEach((step) => {
-      dir.push(step.instructions);
-    });
-    setDrivingDirections(dir);
-    callback(dir, carpool?.driver?._id);
-  };
-
-  const directionsCallback = (
-    resp: google.maps.DirectionsResult | null,
-    status: google.maps.DirectionsStatus
-  ) => {
-    if (rendered) return;
-    const mid = document.getElementById(id);
-
-    if (resp !== null) {
-      if (status === google.maps.DirectionsStatus.OK) {
-        setResponse(resp);
-        setRespStatus(true);
-        setRendered(true);
-        // buildDirections(resp);
-      } else {
-        setRespStatus(false);
-      }
+  const computeRoute = useCallback(async () => {
+    if (!isLoaded || !mapInstance || mapCarpool.riders.length === 0) {
+      clearPolylines(polylinesRef.current);
+      polylinesRef.current = [];
+      return;
     }
-  };
 
-  const renderMap = () => {
-    return (
-      <>
-        <div id={`map-${mapCarpool.driver._id}`} />
-        <GoogleMap
-          id={id}
-          ref={map as React.RefObject<GoogleMap>}
-          options={options}
-          mapContainerStyle={miniMapContainerStyle}
-        >
-          {/* <MiniPlaceInfo markerPlaces={[ChurchPlace]} />
-          <MiniPlaceInfo markerPlaces={[mapCarpool?.driver]} />
-          <MiniPlaceInfo markerPlaces={mapCarpool?.riders} /> */}
-          {mapCarpool.riders.length > 0 && !rendered ? (
-            <DirectionsService
-              // required
-              options={{
-                destination: ChurchPlace.location,
-                waypoints,
-                optimizeWaypoints: true,
-                origin: mapCarpool.driver.location,
-                travelMode: google.maps.TravelMode.DRIVING,
-              }}
-              // required
-              callback={directionsCallback}
-            />
-          ) : null}
-          {respStatus ? (
-            <DirectionsRenderer
-              directions={response}
-              panel={
-                document.getElementById(
-                  `directions-${mapCarpool.driver._id}`
-                ) as HTMLElement
-              }
-              // eslint-disable-line no-undef
-            />
-          ) : null}
-        </GoogleMap>
-      </>
-    );
-  };
-  return renderMap();
+    clearPolylines(polylinesRef.current);
+    polylinesRef.current = [];
+
+    try {
+      const { Route } = (await google.maps.importLibrary(
+        'routes'
+      )) as google.maps.RoutesLibrary;
+
+      const { routes } = await Route.computeRoutes({
+        origin: mapCarpool.driver.location,
+        destination: ChurchPlace.location,
+        intermediates: mapCarpool.riders.map((rider) => ({
+          location: { lat: rider.location.lat, lng: rider.location.lng },
+        })),
+        travelMode: google.maps.TravelMode.DRIVING,
+        optimizeWaypointOrder: true,
+        fields: ['path', 'legs', 'optimizedIntermediateWaypointIndices'],
+      });
+
+      if (!routes?.length) {
+        callback(null, mapCarpool.driver._id);
+        return;
+      }
+
+      const route = routes[0];
+      const newPolylines = route.createPolylines();
+      newPolylines.forEach((polyline) => {
+        polyline.setMap(mapInstance);
+      });
+      polylinesRef.current = newPolylines;
+
+      if (route.path?.length) {
+        const bounds = new google.maps.LatLngBounds();
+        route.path.forEach((point) => bounds.extend(point));
+        mapInstance.fitBounds(bounds);
+      }
+
+      callback(buildDirectionsFromRoute(route), mapCarpool.driver._id);
+    } catch (err) {
+      console.error('Route computation failed:', err);
+      callback(null, mapCarpool.driver._id);
+    }
+  }, [isLoaded, mapInstance, mapCarpool, callback]);
+
+  useEffect(() => {
+    computeRoute();
+    return () => clearPolylines(polylinesRef.current);
+  }, [computeRoute]);
+
+  if (loadError) {
+    return <div>Map cannot be loaded right now, sorry.</div>;
+  }
+  if (!isLoaded) {
+    return <div>Loading map...</div>;
+  }
+
+  return (
+    <>
+      <div id={`map-${mapCarpool.driver._id}`} />
+      <GoogleMap
+        mapContainerStyle={miniMapContainerStyle}
+        options={options}
+        onLoad={setMapInstance}
+        onUnmount={() => {
+          clearPolylines(polylinesRef.current);
+          polylinesRef.current = [];
+          setMapInstance(null);
+        }}
+      />
+    </>
+  );
 }
-// // Path: src/Places.tsx
