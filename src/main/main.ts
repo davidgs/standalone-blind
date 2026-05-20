@@ -36,6 +36,7 @@ import dotenv from 'dotenv';
 import {
   app,
   BrowserWindow,
+  session,
   shell,
   ipcMain,
   type IpcMainInvokeEvent,
@@ -155,6 +156,35 @@ async function enableElectronDebug(): Promise<void> {
   enableDebug();
 }
 
+const GOOGLE_API_URL_FILTER = [
+  '*://*.googleapis.com/*',
+  '*://maps.googleapis.com/*',
+  '*://maps.gstatic.com/*',
+];
+
+/** Electron file:// loads send no Referer; GCP keys with HTTP referrer restrictions return 403. */
+function googleMapsReferer(): string {
+  const override = process.env.GOOGLE_MAPS_REFERER?.trim();
+  if (override) return override;
+  if (process.env.NODE_ENV === 'development') {
+    const port = process.env.PORT || 1212;
+    return `http://localhost:${port}/`;
+  }
+  return 'https://localhost/';
+}
+
+function configureGoogleMapsReferer(): void {
+  const referer = googleMapsReferer();
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    { urls: GOOGLE_API_URL_FILTER },
+    (details, callback) => {
+      const requestHeaders = { ...details.requestHeaders };
+      requestHeaders.Referer = referer;
+      callback({ requestHeaders });
+    }
+  );
+}
+
 const installExtensions = async (): Promise<void> => {
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
   try {
@@ -240,6 +270,7 @@ app.on('window-all-closed', () => {
 app
   .whenReady()
   .then(async () => {
+    configureGoogleMapsReferer();
     await enableElectronDebug();
     await createWindow();
     app.on('activate', () => {
