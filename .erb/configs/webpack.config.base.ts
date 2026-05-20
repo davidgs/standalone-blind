@@ -2,10 +2,19 @@
  * Base webpack config used across other specific configs
  */
 
+import path from 'path';
+import dotenv from 'dotenv';
 import webpack from 'webpack';
 import TsconfigPathsPlugins from 'tsconfig-paths-webpack-plugin';
 import webpackPaths from './webpack.paths';
 import { dependencies as externals } from '../../release/app/package.json';
+
+dotenv.config({ path: path.join(webpackPaths.rootPath, '.env') });
+
+const googleMapsApiKey =
+  process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+  process.env.API_KEY?.trim() ||
+  '';
 
 const configuration: webpack.Configuration = {
   externals: [...Object.keys(externals || {})],
@@ -52,6 +61,9 @@ const configuration: webpack.Configuration = {
   plugins: [
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
+    }),
+    new webpack.DefinePlugin({
+      __GOOGLE_MAPS_API_KEY__: JSON.stringify(googleMapsApiKey),
     }),
   ],
 };

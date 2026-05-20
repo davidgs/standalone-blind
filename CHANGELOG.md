@@ -1,3 +1,9 @@
+# 1.1.0
+
+- Migrate Google Maps to Routes API and Advanced Markers
+- Load Google Maps API key from environment at build time
+- Content Security Policy updates for Electron renderer
+
 # 2.1.0
 
 - Migrate to `css-minifier-webpack-plugin`

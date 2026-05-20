@@ -21,9 +21,9 @@
  * SOFTWARE.
  */
 import { useEffect, useState } from 'react';
-import { MarkerF } from '@react-google-maps/api';
 import { v4 as uuidv4 } from 'uuid';
 import { ChurchPlace, ICarpool, IPerson } from '../types';
+import AdvancedMarker from './AdvancedMarker';
 import MiniInfo from './MiniInfo';
 
 export default function MiniPlaceInfo({
@@ -65,37 +65,33 @@ export default function MiniPlaceInfo({
       {myType === 'carpool' ? (
         myCarpools[0]?.riders?.map((mar: IPerson) => {
           return (
-            <MarkerF
+            <AdvancedMarker
               key={uuidv4()}
               position={{
                 lat: mar?.location.lat,
                 lng: mar?.location.lng,
               }}
               title={mar?.name}
-              animation={window.google.maps.Animation.DROP}
+              iconUrl={mar?.name === ChurchPlace.name ? icon() : aIcon()}
               onClick={() => {
                 setSelected(mar);
-              }}
-              icon={{
-                url: mar?.name === ChurchPlace.name ? icon() : aIcon(),
               }}
             />
           );
         })
       ) : (
-        <MarkerF
+        <AdvancedMarker
           key={uuidv4()}
           position={{
             lat: myRiders[0]?.location.lat || 0,
             lng: myRiders[0]?.location.lng || 0,
           }}
           title={myRiders[0]?.name}
-          animation={window.google.maps.Animation.DROP}
+          iconUrl={
+            myRiders[0]?.name === ChurchPlace.name ? icon() : dIcon()
+          }
           onClick={() => {
             setSelected(myRiders[0]);
-          }}
-          icon={{
-            url: myRiders[0]?.name === ChurchPlace.name ? icon() : dIcon(),
           }}
         />
       )}
