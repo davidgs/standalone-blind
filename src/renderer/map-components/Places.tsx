@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 import React, { useEffect, useState } from 'react';
-import { MarkerF } from '@react-google-maps/api';
 import { IPerson } from '../types';
+import AdvancedMarker from './AdvancedMarker';
 import Info from './Info';
 
 export default function PlaceInfo({
@@ -76,19 +76,16 @@ export default function PlaceInfo({
     <>
       {myPlaces
         ? myPlaces.map((marker) => (
-            <MarkerF
+            <AdvancedMarker
               key={`${marker.location.lat * marker.location.lng}`}
               position={{
                 lat: marker.location.lat,
                 lng: marker.location.lng,
               }}
               title={marker.name}
-              animation={window.google.maps.Animation.DROP}
+              iconUrl={icon()}
               onClick={() => {
                 setSelected(marker);
-              }}
-              icon={{
-                url: icon(),
               }}
             />
           ))

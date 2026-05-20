@@ -39,7 +39,8 @@ if (
 }
 
 const configuration: webpack.Configuration = {
-  devtool: 'inline-source-map',
+  // Avoid eval-based source maps so dev CSP does not require 'unsafe-eval'.
+  devtool: 'cheap-module-source-map',
 
   mode: 'development',
 
@@ -160,6 +161,7 @@ const configuration: webpack.Configuration = {
       isBrowser: false,
       env: process.env.NODE_ENV,
       isDevelopment: process.env.NODE_ENV !== 'production',
+      devServerPort: port,
       nodeModules: webpackPaths.appNodeModulesPath,
     }),
   ],

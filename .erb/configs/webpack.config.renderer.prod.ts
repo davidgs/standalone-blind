@@ -134,7 +134,8 @@ const configuration: webpack.Configuration = {
         removeComments: true,
       },
       isBrowser: false,
-      isDevelopment: process.env.NODE_ENV !== 'production',
+      isDevelopment: false,
+      devServerPort: 1212,
     }),
 
     new webpack.DefinePlugin({

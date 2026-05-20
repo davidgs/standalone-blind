@@ -62,6 +62,8 @@ const configuration: webpack.Configuration = {
       NODE_ENV: 'production',
       DEBUG_PROD: false,
       START_MINIMIZED: false,
+      BLIND_SECRET: process.env.BLIND_SECRET || '',
+      BLIND_PASSWD: process.env.BLIND_PASSWD || '',
     }),
 
     new webpack.DefinePlugin({
