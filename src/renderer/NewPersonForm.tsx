@@ -30,7 +30,10 @@ import HelpTxt from './components/HelpTxt';
 // import AddressField from "./components/AddressField";
 import './style.css';
 import DireWarning from './components/DireWarning';
-import { parse } from 'path';
+
+function formatAddress(person: IPerson): string {
+  return `${person.address} ${person.city} ${person.state} ${person.zip}`.trim();
+}
 
 export default function
 PersonForm({
@@ -128,110 +131,58 @@ PersonForm({
   };
 
   /*
-   * geocode a new person's address before adding to the database.
+   * Geocode the person's address, then create or update them in the database.
    */
-  const geocodeAddress = () => {
-    const newP = { ...(thisPerson as IPerson) };
-    const address = thisPerson?.address;
-    const city = thisPerson?.city;
-    const state = thisPerson?.state;
-    const zip = thisPerson?.zip;
-    const fullAddress = `${address} ${city} ${state} ${zip}`;
-    // eslint-disable-next-line no-undef
+  const savePersonWithGeocode = () => {
+    const personDraft = { ...(thisPerson as IPerson) };
+    const fullAddress = formatAddress(personDraft);
     const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: fullAddress }, (results, status) => {
-      if (status === 'OK' && results !== null) {
-        const { location } = results[0].geometry;
-        setThisPerson((prePerson) => {
-          const np = { ...prePerson } as IPerson;
-          np.location = {
-            lat: location.lat(),
-            lng: location.lng(),
-          };
-          return np;
-        });
-        newP.location = {
-          lat: location.lat(),
-          lng: location.lng(),
-        };
-        // const ts = Date.now();
-        // const sig = Signer(JSON.stringify(newP));
-        window.electronAPI.signRequest(JSON.stringify(newP))
-     .then((response) => {
-        const r = JSON.parse(response);
-        axios
-          .post(
-            // eslint-disable-next-line no-underscore-dangle
-            `https://blind-ministries.org/api/${dbPrefix}${type}`, JSON.stringify(newP)
-            ,
-            {
-              headers: {
-                'x-request-timestamp': parseInt(r.ts),
-                'X-Signature-SHA256': r.signature,
-              },
-            },
 
-          )
-          // eslint-disable-next-line promise/always-return
-          .then((res) => {
-            addPersonCallback(thisPerson as IPerson);
-          })
-          .catch((err) => {
-            // eslint-disable-next-line no-console
-            console.log(err);
-          });
-        setShow(!show);
-      }
-      ).catch((err) => {
-        console.log('error: ', err);
-      });
-      } else {
+    geocoder.geocode({ address: fullAddress }, (results, status) => {
+      if (status !== 'OK' || !results?.[0]) {
         // eslint-disable-next-line no-alert
         alert(`Geocode was not successful for the following reason: ${status}`);
+        return;
       }
+
+      const { location } = results[0].geometry;
+      const personWithLocation: IPerson = {
+        ...personDraft,
+        location: {
+          lat: location.lat(),
+          lng: location.lng(),
+        },
+      };
+
+      setThisPerson(personWithLocation);
+
+      const url = newPerson
+        ? `https://blind-ministries.org/api/${dbPrefix}${type}`
+        : `https://blind-ministries.org/api/update/${dbPrefix}${type}/${personWithLocation._id}`;
+
+      window.electronAPI
+        .signRequest(JSON.stringify(personWithLocation))
+        .then((response) => {
+          const r = JSON.parse(response);
+          return axios.post(url, JSON.stringify(personWithLocation), {
+            headers: {
+              'x-request-timestamp': parseInt(r.ts, 10),
+              'X-Signature-SHA256': r.signature,
+            },
+          });
+        })
+        .then(() => {
+          addPersonCallback(personWithLocation);
+          setShow(false);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     });
   };
 
-  /*
-   *  Adds a person to the database.
-   */
   const addPerson = () => {
-    if (newPerson) {
-      geocodeAddress();
-    } else {
-      // const ts = Date.now();
-      // const sig = Signer(JSON.stringify(thisPerson));
-      window.electronAPI.signRequest(JSON.stringify(thisPerson))
-        .then((response) => {
-          const r = JSON.parse(response);
-          console.log('response: ', response);
-          const ts = parseInt(r.ts);
-          const sig = r.signature;
-          axios
-        .post(
-          // eslint-disable-next-line no-underscore-dangle
-          `https://blind-ministries.org/api/update/${dbPrefix}${type}/${thisPerson?._id}`, JSON.stringify(thisPerson),
-          {
-            headers: {
-              'x-request-timestamp': parseInt(r.ts),
-              'X-Signature-SHA256': r.signature,
-            },
-          },
-        )
-        // eslint-disable-next-line promise/always-return
-        .then((res) => {
-          addPersonCallback(thisPerson as IPerson);
-        })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.log(err);
-        });
-      })
-      .catch((err) => {
-        console.log('error: ', err);
-      });
-    }
-    setShow(!show);
+    savePersonWithGeocode();
   };
 
   /*
