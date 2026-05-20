@@ -114,8 +114,8 @@ async function sendMail(recipient: string, body: string): Promise<string> {
   const result: SentMessageInfo = await transporter.sendMail({
     from: 'routing@blind-ministries.org',
     to: recipient,
-    replyTo: 'annette.langefeld1@gmail.com',
-    cc: 'annette.langefeld1@gmail.com',
+    replyTo: 'routing@blind-ministries.org',
+    cc: 'routing@blind-ministries.org',
     subject: 'Blind Ministry Routing',
     html: body,
   });

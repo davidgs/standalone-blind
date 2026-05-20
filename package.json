@@ -251,7 +251,8 @@
     "publish": {
       "provider": "github",
       "owner": "davidgs",
-      "repo": "standalone-blind"
+      "repo": "standalone-blind",
+      "releaseType": "release"
     }
   },
   "collective": {
