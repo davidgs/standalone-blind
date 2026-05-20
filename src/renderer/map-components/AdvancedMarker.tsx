@@ -28,12 +28,15 @@ export default function AdvancedMarker({
     img.height = 32;
     img.alt = title ?? '';
     img.style.display = 'block';
+    img.style.cursor = 'pointer';
+    img.style.pointerEvents = 'auto';
 
     const marker = new google.maps.marker.AdvancedMarkerElement({
       map,
       position,
       title,
       content: img,
+      gmpClickable: true,
     });
 
     const handleClick = () => {
@@ -41,9 +44,11 @@ export default function AdvancedMarker({
     };
 
     marker.addEventListener('gmp-click', handleClick);
+    img.addEventListener('click', handleClick);
 
     return () => {
       marker.removeEventListener('gmp-click', handleClick);
+      img.removeEventListener('click', handleClick);
       marker.map = null;
     };
   }, [map, position.lat, position.lng, title, iconUrl]);

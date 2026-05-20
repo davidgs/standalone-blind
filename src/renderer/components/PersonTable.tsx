@@ -33,7 +33,6 @@ import axios from 'axios';
 import PersonForm from '../NewPersonForm';
 import { IPerson, SortPeople } from '../types';
 import DireWarning from './DireWarning';
-import Signer from './signer';
 import { parse } from 'path';
 
 interface TableColumn {

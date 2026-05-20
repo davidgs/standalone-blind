@@ -21,7 +21,6 @@
  * SOFTWARE.
  */
 import { useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { ChurchPlace, ICarpool, IPerson } from '../types';
 import AdvancedMarker from './AdvancedMarker';
 import MiniInfo from './MiniInfo';
@@ -66,7 +65,7 @@ export default function MiniPlaceInfo({
         myCarpools[0]?.riders?.map((mar: IPerson) => {
           return (
             <AdvancedMarker
-              key={uuidv4()}
+              key={mar._id}
               position={{
                 lat: mar?.location.lat,
                 lng: mar?.location.lng,
@@ -81,7 +80,7 @@ export default function MiniPlaceInfo({
         })
       ) : (
         <AdvancedMarker
-          key={uuidv4()}
+          key={myRiders[0]?._id ?? 'solo-rider'}
           position={{
             lat: myRiders[0]?.location.lat || 0,
             lng: myRiders[0]?.location.lng || 0,
