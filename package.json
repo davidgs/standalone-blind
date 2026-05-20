@@ -202,6 +202,7 @@
     ],
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
+      "identity": "970E7341A4C23DD9C046A60F16CCF02BDEA7A4BB",
       "target": {
         "target": "default",
         "arch": [
