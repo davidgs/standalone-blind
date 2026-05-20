@@ -212,9 +212,9 @@ const createWindow = async (): Promise<void> => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.2.0',
+    applicationVersion: '1.2.1',
     copyright: '© 2023',
-    version: '1.2.0',
+    version: '1.2.1',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
     authors: ['David G. Simmons'],
     website: 'https://github.com/davidgs/standalone-blind',
