@@ -1,3 +1,9 @@
+# 1.2.1
+
+- Fix CI mac signing (remove local-only certificate hash pin)
+- Inject Google Maps Referer for Electron file:// loads
+- Geocode person address on create and update; mac publish notarization env fixes
+
 # 1.2.0
 
 - Upgrade Electron 23 → 40, electron-builder 26, electron-updater 6
