@@ -47,6 +47,9 @@
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "browserslist": [],
   "prettier": {
     "singleQuote": true,
@@ -201,8 +204,7 @@
       "target": {
         "target": "default",
         "arch": [
-          "arm64",
-          "x64"
+          "arm64"
         ]
       },
       "type": "distribution",
