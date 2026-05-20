@@ -42,6 +42,8 @@ jobs:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          # App-specific password (same value as APPLE_ID_PASS); required by electron-builder notarytool
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASS }}
           # Developer Team ID (10 chars, e.g. from Developer ID cert in Keychain)
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
