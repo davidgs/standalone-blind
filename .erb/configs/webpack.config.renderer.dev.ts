@@ -46,11 +46,7 @@ const configuration: webpack.Configuration = {
 
   target: ['web', 'electron-renderer'],
 
-  entry: [
-    `webpack-dev-server/client?http://localhost:${port}/dist`,
-    'webpack/hot/only-dev-server',
-    path.join(webpackPaths.srcRendererPath, 'index.tsx'),
-  ],
+  entry: [path.join(webpackPaths.srcRendererPath, 'index.tsx')],
 
   output: {
     path: webpackPaths.distRendererPath,
@@ -176,7 +172,11 @@ const configuration: webpack.Configuration = {
     compress: true,
     hot: true,
     headers: { 'Access-Control-Allow-Origin': '*' },
+    client: {
+      webSocketURL: `ws://localhost:${port}/ws`,
+    },
     static: {
+      directory: webpackPaths.distRendererPath,
       publicPath: '/',
     },
     historyApiFallback: {

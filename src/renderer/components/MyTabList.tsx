@@ -24,7 +24,6 @@
 /* eslint-disable react/self-closing-comp */
 import React, { useState, useEffect, SyntheticEvent } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
-import { v4 as uuidv4 } from 'uuid';
 import 'react-tabs/style/react-tabs.css';
 import '../App.css';
 import { OverlayTrigger, Tooltip, Button } from 'react-bootstrap';
@@ -83,10 +82,10 @@ export default function MyTabList({
         const dirList = document.createElement('ol');
         dirList.style.textAlign = 'left';
         dirList.style.marginLeft = '1rem';
-        directions.forEach((dir) => {
+        directions.forEach((dir, index) => {
           const dirItem = document.createElement('li');
           dirItem.innerHTML = dir;
-          dirItem.setAttribute('key', uuidv4());
+          dirItem.setAttribute('data-step', String(index));
           dirList.appendChild(dirItem);
         });
         dirArea.appendChild(dirList);
@@ -102,14 +101,13 @@ export default function MyTabList({
     const list = carpools.map((carp: ICarpool) => {
       const riders = carp.riders.map((rider: IPerson) => {
         return (
-          <>
+          <React.Fragment key={rider._id}>
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'row',
                 marginLeft: '1rem',
               }}
-              key={uuidv4()}
             >
               <div
                 style={{
@@ -118,7 +116,6 @@ export default function MyTabList({
                   marginTop: '5%',
                   alignContent: 'center',
                 }}
-                key={uuidv4()}
               >
                 <OverlayTrigger
                   placement="auto"
@@ -133,7 +130,7 @@ export default function MyTabList({
                     variant="warning"
                     value={JSON.stringify(rider)}
                     onClick={removePerson}
-                    id={uuidv4()}
+                    id={`remove-rider-${rider._id}`}
                   >
                     <PersonXFill />
                   </Button>
@@ -149,7 +146,7 @@ export default function MyTabList({
                 key={rider._id}
               >
                 <h4>{rider.name}</h4>
-                <div style={{ textAlign: 'left' }} key={uuidv4()}>
+                <div style={{ textAlign: 'left' }}>
                   <details id={`details-${rider._id}`}>
                     <summary>address</summary>
                     <address>
@@ -186,7 +183,7 @@ export default function MyTabList({
               </div>
             </div>
             <hr />
-          </>
+          </React.Fragment>
         );
       });
       const sendRouteMail = (
@@ -225,21 +222,19 @@ export default function MyTabList({
       };
 
       return (
-        <div
-          style={{
-            width: '90vw',
-            overflow: 'scroll',
-            borderLeft: '1px solid grey',
-            borderRight: '1px solid grey',
-            // borderBottom: '1px solid grey',
-            borderBottomLeftRadius: '10px',
-            borderBottomRightRadius: '10px',
-            backgroundColor: '#c0b3e9',
-            paddingRight: '1rem',
-          }}
-          key={uuidv4()}
-        >
-          <TabPanel key={uuidv4()}>
+        <TabPanel key={carp.driver._id}>
+          <div
+            style={{
+              width: '90vw',
+              overflow: 'scroll',
+              borderLeft: '1px solid grey',
+              borderRight: '1px solid grey',
+              borderBottomLeftRadius: '10px',
+              borderBottomRightRadius: '10px',
+              backgroundColor: '#c0b3e9',
+              paddingRight: '1rem',
+            }}
+          >
             <div>
               <p />
             </div>
@@ -249,7 +244,6 @@ export default function MyTabList({
                 display: 'flex',
                 flexDirection: 'row',
               }}
-              key={uuidv4()}
             >
               <div
                 style={{
@@ -257,7 +251,6 @@ export default function MyTabList({
                   flexDirection: 'column',
                   width: '35%',
                 }}
-                key={uuidv4()}
               >
                 <h3>Riders</h3>
               </div>
@@ -267,12 +260,8 @@ export default function MyTabList({
                   flexDirection: 'column',
                   width: '65%',
                 }}
-                key={uuidv4()}
               >
-                <div
-                  style={{ display: 'flex', flexDirection: 'row' }}
-                  key={uuidv4()}
-                >
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
                   <div
                     style={{
                       display: 'flex',
@@ -280,7 +269,6 @@ export default function MyTabList({
                       width: '90%',
                       paddingLeft: '4rem',
                     }}
-                    key={uuidv4()}
                   >
                     <h3>Map</h3>
                   </div>
@@ -290,7 +278,6 @@ export default function MyTabList({
                       flexDirection: 'column',
                       width: '10%',
                     }}
-                    key={uuidv4()}
                   >
                     <OverlayTrigger
                       placement="auto"
@@ -318,17 +305,13 @@ export default function MyTabList({
               </div>
             </div>
 
-            <div
-              style={{ display: 'flex', flexDirection: 'row' }}
-              key={uuidv4()}
-            >
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   width: '35%',
                 }}
-                key={uuidv4()}
               >
                 {riders}
                 <div style={{ display: 'flex', flexDirection: 'row' }}>
@@ -339,7 +322,6 @@ export default function MyTabList({
                       marginTop: '5%',
                       alignContent: 'center',
                     }}
-                    key={uuidv4()}
                   >
                     <h4>Driver:</h4></div>
                     <div
@@ -349,10 +331,9 @@ export default function MyTabList({
                         width: '75%',
                         marginLeft: '1rem',
                       }}
-                      key={uuidv4()}
                     >
                       <h4>{carp.driver.name}</h4>
-                      <div style={{ textAlign: 'left' }} key={uuidv4()}>
+                      <div style={{ textAlign: 'left' }}>
                         <details id={`details-${carp.driver._id}`}>
                           <summary>address</summary>
                           <address>
@@ -400,7 +381,6 @@ export default function MyTabList({
                   paddingBottom: '1rem',
                 }}
                 id={`map-${carp.driver._id}`}
-                key={uuidv4()}
               >
                 <MiniMap carpool={carp} callback={setDirections} />
               </div>
@@ -413,7 +393,6 @@ export default function MyTabList({
                 flexDirection: 'row',
                 width: '100%',
               }}
-              key={uuidv4()}
             >
               <h3 style={{ margin: 'auto' }}>
                 Directions{' '}
@@ -451,7 +430,6 @@ export default function MyTabList({
                 marginLeft: '1rem',
                 display: 'none',
               }}
-              key={uuidv4()}
               id={`directions-container-${carp.driver._id}`}
             >
               <div
@@ -463,12 +441,11 @@ export default function MyTabList({
                   padding: '1rem',
                 }}
                 id={`directions-${carp.driver._id}`}
-                key={uuidv4()}
               ></div>
               {/* </div> */}
             </div>
-          </TabPanel>
-        </div>
+          </div>
+        </TabPanel>
       );
     });
     setTabPanels(list);
@@ -489,7 +466,7 @@ export default function MyTabList({
   const makeTabs = () => {
     const newTabs: React.JSX.Element[] = [];
     carpools.forEach((carpool) => {
-      newTabs.push(<Tab key={uuidv4()}>{carpool.driver.name}
+      newTabs.push(<Tab key={carpool.driver._id}>{carpool.driver.name}
       <OverlayTrigger
         placement="auto"
         overlay={
@@ -519,8 +496,8 @@ export default function MyTabList({
 
   return (
     <>
-      <Tabs id={uuidv4()}>
-        <TabList key={uuidv4()}>{tabs}</TabList>
+      <Tabs id="blind-carpool-tabs">
+        <TabList>{tabs}</TabList>
         {tabPanels}
       </Tabs>
       <PersonModal

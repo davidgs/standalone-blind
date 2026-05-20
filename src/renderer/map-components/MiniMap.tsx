@@ -52,6 +52,7 @@ export default function MiniMap({
   const { isLoaded, loadError } = useGoogleMaps();
   const [mapCarpool, setMapCarpool] = useState<ICarpool>(carpool);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
   const polylinesRef = useRef<google.maps.Polyline[]>([]);
 
   const miniMapContainerStyle = {
@@ -85,6 +86,7 @@ export default function MiniMap({
 
     clearPolylines(polylinesRef.current);
     polylinesRef.current = [];
+    setRouteError(null);
 
     try {
       const { Route } = (await google.maps.importLibrary(
@@ -123,6 +125,9 @@ export default function MiniMap({
       callback(buildDirectionsFromRoute(route), mapCarpool.driver._id);
     } catch (err) {
       console.error('Route computation failed:', err);
+      const message =
+        err instanceof Error ? err.message : 'Route computation failed';
+      setRouteError(message);
       callback(null, mapCarpool.driver._id);
     }
   }, [isLoaded, mapInstance, mapCarpool, callback]);
@@ -141,6 +146,15 @@ export default function MiniMap({
 
   return (
     <>
+      {routeError ? (
+        <div
+          className="alert alert-warning"
+          role="alert"
+          style={{ maxWidth: 650, margin: '0 auto 8px' }}
+        >
+          {routeError}
+        </div>
+      ) : null}
       <div id={`map-${mapCarpool.driver._id}`} />
       <GoogleMap
         mapContainerStyle={miniMapContainerStyle}

@@ -37,8 +37,6 @@ import { IPerson, ICarpool, SortPeople } from './types';
 import 'react-tabs/style/react-tabs.css';
 import MyTabList from './components/MyTabList';
 import PersonTable from './components/PersonTable';
-import Signer from './components/signer';
-
 function Hello() {
   const [allDrivers, setAllDrivers] = React.useState<IPerson[]>([]);
   const [allAttendees, setAllAttendees] = React.useState<IPerson[]>([]);

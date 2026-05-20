@@ -30,7 +30,6 @@ import HelpTxt from './components/HelpTxt';
 // import AddressField from "./components/AddressField";
 import './style.css';
 import DireWarning from './components/DireWarning';
-import Signer from './components/signer';
 import { parse } from 'path';
 
 export default function

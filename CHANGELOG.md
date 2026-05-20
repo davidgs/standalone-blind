@@ -1,3 +1,12 @@
+# 1.2.0
+
+- Upgrade Electron 23 → 40, electron-builder 26, electron-updater 6
+- Resolve npm audit vulnerabilities (0 reported after migration)
+- Upgrade nodemailer 8, uuid 11, webpack-dev-server 5, css-minimizer-webpack-plugin 8
+- Remove unused crypto-browserify / renderer signer (signing stays in main process)
+- Jest 30, @electron/notarize 3 with notarytool, Node >= 20 engines
+- macOS entitlements: drop deprecated allow-unsigned-executable-memory
+
 # 1.1.0
 
 - Migrate Google Maps to Routes API and Advanced Markers

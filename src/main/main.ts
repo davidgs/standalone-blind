@@ -31,18 +31,32 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
+import { createHmac, type BinaryLike } from 'crypto';
 import dotenv from 'dotenv';
-import { app, BrowserWindow, shell, autoUpdater, ipcMain } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  type IpcMainInvokeEvent,
+} from 'electron';
 import Store from 'electron-store';
-import log from 'electron-log';
+import nodemailer, { type SentMessageInfo, type Transporter } from 'nodemailer';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import  { Hmac, createHmac } from 'crypto';
-import nodemailer, {SentMessageInfo} from 'nodemailer';
 
-const electronApp = require('electron').app;
+type StoreSchema = {
+  BLIND_SECRET?: string;
+  BLIND_PASSWD?: string;
+  'blind-routes'?: unknown;
+};
 
-const store = new Store();
+const store = new Store<StoreSchema>();
+
+function getStoreString(key: 'BLIND_SECRET' | 'BLIND_PASSWD'): string | undefined {
+  const value = store.get(key);
+  return typeof value === 'string' ? value : undefined;
+}
 
 /** Load .env when running unpackaged; CI/production builds bake secrets via webpack. */
 if (process.env.NODE_ENV !== 'production') {
@@ -60,77 +74,71 @@ function initSecretsFromEnv(): void {
 
 initSecretsFromEnv();
 
-const transporter = nodemailer.createTransport({
-  host: "blind-ministries.org",
+const transporter: Transporter = nodemailer.createTransport({
+  host: 'blind-ministries.org',
   port: 465,
   secure: true,
   auth: {
-    user: "routing@blind-ministries.org",
-    pass: store.get("BLIND_PASSWD"),
+    user: 'routing@blind-ministries.org',
+    pass: getStoreString('BLIND_PASSWD') ?? '',
   },
 });
 
-/*
- * get the params from the last set of routes
- * @return QR Configuration settings
- */
-ipcMain.handle('get-last-routes', () => {
+ipcMain.handle('get-last-routes', (): string => {
   return JSON.stringify(store.get('blind-routes', null));
 });
 
-function Signer(contents: string) : {signature: string, ts: string} | null {
-const ts = Date.now();
-    const sig_basestring = `V0:${ts}:${contents}`;
-    console.log(`Sig Base String: ${sig_basestring}`);
-    let hm;
-    const pw = store.get("BLIND_SECRET");
-    console.log(`Secret: ${pw}`)
-    if (pw) {
-      hm = createHmac('sha256', pw);
-      hm.update(sig_basestring);
-      const my_signature = hm.digest('hex');
-      return {signature: my_signature, ts: ts.toString()};
-    } else {
-      return null;
-    }
-  };
-
-ipcMain.handle('sign-request', (e: Event, contents: string) => {
-  return JSON.stringify(Signer(contents));
-});
-
-async function SendIt(recipient: string, body: string) {
-  const mailOptions = {
-    from: 'routing@blind-ministries.org', // sender address
-    name: 'Blind Ministry Drivers',
-    to: recipient, // list of receivers
-    replyTo: 'routing@blind-ministries.org',
-    // cc: 'annette.langefeld1@gmail.com',
-    cc: 'routing@blind-ministries.org',
-    subject: 'Blind Ministry Routing', // Subject line
-    html: body, // plain text body
-  };
-  const foo = await transporter.sendMail(mailOptions)
-  return JSON.stringify(foo);
+function signRequest(
+  contents: string
+): { signature: string; ts: string } | null {
+  const ts = Date.now();
+  const sigBasestring = `V0:${ts}:${contents}`;
+  const secret = getStoreString('BLIND_SECRET');
+  if (!secret) {
+    return null;
+  }
+  const hm = createHmac('sha256', secret as BinaryLike);
+  hm.update(sigBasestring);
+  return { signature: hm.digest('hex'), ts: ts.toString() };
 }
 
-ipcMain.handle('send-mail', (e: Event, recipient: string, body: string) => {
-  return SendIt(recipient, body);
-});
+ipcMain.handle(
+  'sign-request',
+  (_event: IpcMainInvokeEvent, contents: string): string => {
+    return JSON.stringify(signRequest(contents));
+  }
+);
 
-/*
- * save the params from the last set of routes
- * @return QR Configuration settings
- */
-ipcMain.handle('save-last-routes', (e: Event, routes: string) => {
-  store.delete('blind-routes');
-  store.set('blind-routes', JSON.parse(routes));
-  return JSON.stringify(store.get('blind-routes', null));
-});
+async function sendMail(recipient: string, body: string): Promise<string> {
+  const result: SentMessageInfo = await transporter.sendMail({
+    from: 'routing@blind-ministries.org',
+    to: recipient,
+    replyTo: 'annette.langefeld1@gmail.com',
+    cc: 'annette.langefeld1@gmail.com',
+    subject: 'Blind Ministry Routing',
+    html: body,
+  });
+  return JSON.stringify(result);
+}
 
-// setInterval(() => {
-//   up.checkForUpdates();
-// }, 1.8e6);
+ipcMain.handle(
+  'send-mail',
+  (
+    _event: IpcMainInvokeEvent,
+    recipient: string,
+    body: string
+  ): Promise<string> => sendMail(recipient, body)
+);
+
+ipcMain.handle(
+  'save-last-routes',
+  (_event: IpcMainInvokeEvent, routes: string): string => {
+    store.delete('blind-routes');
+    store.set('blind-routes', JSON.parse(routes) as unknown);
+    return JSON.stringify(store.get('blind-routes', null));
+  }
+);
+
 let mainWindow: BrowserWindow | null = null;
 
 if (process.env.NODE_ENV === 'production') {
@@ -141,24 +149,25 @@ if (process.env.NODE_ENV === 'production') {
 const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
-if (isDebug) {
-  require('electron-debug')();
+async function enableElectronDebug(): Promise<void> {
+  if (!isDebug) return;
+  const { default: enableDebug } = await import('electron-debug');
+  enableDebug();
 }
 
-const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
+const installExtensions = async (): Promise<void> => {
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
-
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload
-    )
-    .catch(console.log);
+  try {
+    const installer = await import('electron-devtools-installer');
+    const install =
+      installer.default ?? installer.installExtension;
+    await install(installer.REACT_DEVELOPER_TOOLS, { forceDownload });
+  } catch (err) {
+    console.log(err);
+  }
 };
 
-const createWindow = async () => {
+const createWindow = async (): Promise<void> => {
   if (isDebug) {
     await installExtensions();
   }
@@ -173,9 +182,9 @@ const createWindow = async () => {
 
   const options = {
     applicationName: 'Blind Ministry Routing',
-    applicationVersion: '1.1.0',
+    applicationVersion: '1.2.0',
     copyright: '© 2023',
-    version: '1.1.0',
+    version: '1.2.0',
     credits: 'Credits:\n\t• David G. Simmons\n\t• Electron React Boilerplate',
     authors: ['David G. Simmons'],
     website: 'https://github.com/davidgs/standalone-blind',
@@ -189,9 +198,10 @@ const createWindow = async () => {
     height: 1024,
     icon: getAssetPath('icon.png'),
     webPreferences: {
-      preload: app.isPackaged
-        ? path.join(__dirname, 'preload.js')
-        : path.join(__dirname, '../../.erb/dll/preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
     },
   });
 
@@ -215,24 +225,13 @@ const createWindow = async () => {
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 
-  // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
-
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-  // new AppUpdater();
 };
 
-/**
- * Add event listeners...
- */
-
 app.on('window-all-closed', () => {
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -240,11 +239,10 @@ app.on('window-all-closed', () => {
 
 app
   .whenReady()
-  .then(() => {
-    createWindow();
+  .then(async () => {
+    await enableElectronDebug();
+    await createWindow();
     app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
   })
