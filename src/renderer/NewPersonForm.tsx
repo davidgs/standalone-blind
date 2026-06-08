@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 /* eslint-disable no-unused-vars */
-import React, { SyntheticEvent, useEffect, useState } from 'react';
+import React, { SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { Modal, Form, Button, Col, Row } from 'react-bootstrap';
 import axios from 'axios';
 import { IPerson } from './types';
@@ -34,6 +34,23 @@ import DireWarning from './components/DireWarning';
 function formatAddress(person: IPerson): string {
   return `${person.address} ${person.city} ${person.state} ${person.zip}`.trim();
 }
+
+function getApiCollectionName(personType: string): string {
+  return personType.toLowerCase() === 'drivers' ? 'Drivers' : 'Attendees';
+}
+
+function hasLocation(person: IPerson): boolean {
+  return person.location.lat !== 0 || person.location.lng !== 0;
+}
+
+function geocodeDelay(attempt: number): number {
+  return [750, 1500, 3000, 5000][attempt] ?? 8000;
+}
+
+const geocodeCache = new Map<
+  string,
+  { lat: number; lng: number }
+>();
 
 export default function
 PersonForm({
@@ -64,6 +81,7 @@ PersonForm({
   const [emailValid, setEmailValid] = useState(true);
   const [stateValid, setStateValid] = useState(true);
   const [zipValid, setZipValid] = useState(true);
+  const geocodeInFlightRef = useRef(false);
   const dbPrefix = '';
 
   const patterns = {
@@ -134,37 +152,29 @@ PersonForm({
    * Geocode the person's address, then create or update them in the database.
    */
   const savePersonWithGeocode = () => {
+    if (geocodeInFlightRef.current) {
+      return;
+    }
+
     const personDraft = { ...(thisPerson as IPerson) };
     const fullAddress = formatAddress(personDraft);
     const geocoder = new google.maps.Geocoder();
+    const maxGeocodeRetries = 3;
+    geocodeInFlightRef.current = true;
 
-    geocoder.geocode({ address: fullAddress }, (results, status) => {
-      if (status !== 'OK' || !results?.[0]) {
-        // eslint-disable-next-line no-alert
-        alert(`Geocode was not successful for the following reason: ${status}`);
-        return;
-      }
+    const persistPerson = (personToSave: IPerson) => {
+      setThisPerson(personToSave);
 
-      const { location } = results[0].geometry;
-      const personWithLocation: IPerson = {
-        ...personDraft,
-        location: {
-          lat: location.lat(),
-          lng: location.lng(),
-        },
-      };
-
-      setThisPerson(personWithLocation);
-
+      const collectionName = getApiCollectionName(personType);
       const url = newPerson
-        ? `https://blind-ministries.org/api/${dbPrefix}${type}`
-        : `https://blind-ministries.org/api/update/${dbPrefix}${type}/${personWithLocation._id}`;
+        ? `https://blind-ministries.org/api/${dbPrefix}${collectionName}`
+        : `https://blind-ministries.org/api/update/${dbPrefix}${collectionName}/${personToSave._id}`;
 
-      window.electronAPI
-        .signRequest(JSON.stringify(personWithLocation))
+      return window.electronAPI
+        .signRequest(JSON.stringify(personToSave))
         .then((response) => {
           const r = JSON.parse(response);
-          return axios.post(url, JSON.stringify(personWithLocation), {
+          return axios.post(url, JSON.stringify(personToSave), {
             headers: {
               'x-request-timestamp': parseInt(r.ts, 10),
               'X-Signature-SHA256': r.signature,
@@ -172,13 +182,71 @@ PersonForm({
           });
         })
         .then(() => {
-          addPersonCallback(personWithLocation);
+          addPersonCallback(personToSave);
           setShow(false);
         })
         .catch((err) => {
           console.log(err);
+        })
+        .finally(() => {
+          geocodeInFlightRef.current = false;
         });
-    });
+    };
+
+    const handleGeocodeFailure = (status: string) => {
+      if (hasLocation(personDraft)) {
+        // Keep existing coordinates when editing and geocoding is temporarily unavailable.
+        alert(
+          `Geocode was not successful for the following reason: ${status}. Keeping the existing map coordinates.`
+        );
+        persistPerson(personDraft);
+        return;
+      }
+
+      alert(
+        `Geocode was not successful for the following reason: ${status}. This record was not saved because it needs valid map coordinates.`
+      );
+    };
+
+    const attemptGeocode = (attempt: number) => {
+      const cachedLocation = geocodeCache.get(fullAddress);
+      if (cachedLocation) {
+        persistPerson({
+          ...personDraft,
+          location: cachedLocation,
+        });
+        return;
+      }
+
+      geocoder.geocode({ address: fullAddress }, (results, status) => {
+        if (status === 'OVER_QUERY_LIMIT' && attempt < maxGeocodeRetries) {
+          window.setTimeout(() => {
+            attemptGeocode(attempt + 1);
+          }, geocodeDelay(attempt));
+          return;
+        }
+
+        if (status !== 'OK' || !results?.[0]) {
+          handleGeocodeFailure(status);
+          return;
+        }
+
+        const { location } = results[0].geometry;
+        const personWithLocation: IPerson = {
+          ...personDraft,
+          location: {
+            lat: location.lat(),
+            lng: location.lng(),
+          },
+        };
+
+        geocodeCache.set(fullAddress, personWithLocation.location);
+
+        persistPerson(personWithLocation);
+      });
+    };
+
+    attemptGeocode(0);
   };
 
   const addPerson = () => {
@@ -196,10 +264,12 @@ PersonForm({
   };
 
   useEffect(() => {
+    setType(type);
     if (person) {
       setThisPerson(person);
       setNewPerson(false);
     } else {
+      setNewPerson(true);
       const d: IPerson = {
         _id: '',
         name: '',

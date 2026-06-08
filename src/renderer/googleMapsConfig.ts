@@ -15,7 +15,6 @@ export const GOOGLE_MAPS_API_KEY = __GOOGLE_MAPS_API_KEY__;
 export const GOOGLE_MAP_ID = 'DEMO_MAP_ID';
 
 export const GOOGLE_MAPS_LIBRARIES: Library[] = [
-  'places',
   'routes',
   'marker',
 ];
