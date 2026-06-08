@@ -20,12 +20,14 @@ export default function PersonModal({
   const [mapLink, setMapLink] = useState<string>();
   const [sent, setSent] = useState<boolean>(false);
   const [sendOK, setSendOK] = useState<boolean>(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [deets, setDeets] = useState<IEmail>();
 
 
   const closeMe = () => {
     setSendOK(false);
     setSent(false);
+    setSendError(null);
     handleClose();
   };
 
@@ -77,31 +79,24 @@ export default function PersonModal({
   }, [details]);
 
   const sendit = () => {
-    if (!details?.info?.driver.email) {
+    const to = details?.info?.driver.email?.trim();
+    if (!to) {
       setSendOK(false);
+      setSendError('Driver has no email address.');
       return;
     }
-    const email = {
-      to: details.info.driver.email,
-      data: document.getElementById('finalEmail')?.innerHTML,
-    };
-    window.electronAPI.sendMail(details.info.driver.email as string, document.getElementById('finalEmail')?.innerHTML || '')
-      .then((res) => {
-        if (res) {
-          console.log(res);
-          const ponce = JSON.parse(res);
-          if (ponce.accepted.length > 0){
-            setSendOK(true);
-            setSent(true);
-          } else if (ponce.rejected.length > 0) {
-            setSendOK(false);
-          }
-        }
-
-        console.log(res);
+    setSendError(null);
+    setSent(true);
+    window.electronAPI
+      .sendMail(to, document.getElementById('finalEmail')?.innerHTML || '')
+      .then(() => {
+        setSendOK(true);
       })
-      .catch((err) => {
-        console.log(err);
+      .catch((err: Error) => {
+        setSendOK(false);
+        setSent(false);
+        setSendError(err?.message ?? 'Failed to send email.');
+        console.error(err);
       });
   };
   useEffect(() => {
@@ -164,6 +159,11 @@ export default function PersonModal({
           </Row>
         </Form>
         <p />
+        {sendError ? (
+          <div className="alert alert-danger" role="alert">
+            {sendError}
+          </div>
+        ) : null}
         <div
           id="finalEmail"
           style={{

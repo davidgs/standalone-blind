@@ -59,21 +59,35 @@ function getStoreString(key: 'BLIND_SECRET' | 'BLIND_PASSWD'): string | undefine
   return typeof value === 'string' ? value : undefined;
 }
 
+function trimSecretValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
 /** Load .env when running unpackaged; CI/production builds bake secrets via webpack. */
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 }
 
 function initSecretsFromEnv(): void {
-  if (process.env.BLIND_SECRET) {
-    store.set('BLIND_SECRET', process.env.BLIND_SECRET);
-  }
-  if (process.env.BLIND_PASSWD) {
-    store.set('BLIND_PASSWD', process.env.BLIND_PASSWD);
-  }
+  const secret = trimSecretValue(process.env.BLIND_SECRET);
+  const passwd = trimSecretValue(process.env.BLIND_PASSWD);
+  if (secret) store.set('BLIND_SECRET', secret);
+  if (passwd) store.set('BLIND_PASSWD', passwd);
 }
 
 initSecretsFromEnv();
+
+function getMailPassword(): string {
+  return trimSecretValue(getStoreString('BLIND_PASSWD')) ?? '';
+}
 
 const transporter: Transporter = nodemailer.createTransport({
   host: 'blind-ministries.org',
@@ -81,7 +95,7 @@ const transporter: Transporter = nodemailer.createTransport({
   secure: true,
   auth: {
     user: 'routing@blind-ministries.org',
-    pass: getStoreString('BLIND_PASSWD') ?? '',
+    pass: getMailPassword(),
   },
 });
 
@@ -110,15 +124,49 @@ ipcMain.handle(
   }
 );
 
+function formatSendMailError(result: SentMessageInfo): string {
+  const rejected = result.rejected ?? [];
+  if (rejected.length === 0) return 'Email was not accepted by the server.';
+
+  const detail = result.rejectedErrors?.[0];
+  const serverMsg =
+    typeof detail?.response === 'string'
+      ? detail.response
+      : detail?.message;
+  return (
+    serverMsg ??
+    `The server refused delivery to: ${rejected.join(', ')}`
+  );
+}
+
 async function sendMail(recipient: string, body: string): Promise<string> {
+  if (!getMailPassword()) {
+    throw new Error(
+      'SMTP password not configured. Set BLIND_PASSWD in .env and restart the app.'
+    );
+  }
+
   const result: SentMessageInfo = await transporter.sendMail({
     from: 'routing@blind-ministries.org',
     to: recipient,
-    replyTo: 'routing@blind-ministries.org',
-    cc: 'routing@blind-ministries.org',
+    replyTo: 'annette.langefeld1@gmail.com',
+    cc: 'annette.langefeld1@gmail.com',
     subject: 'Blind Ministry Routing',
     html: body,
   });
+
+  const rejected = result.rejected ?? [];
+  const accepted = result.accepted ?? [];
+  const recipientLower = recipient.toLowerCase();
+  const recipientAccepted = accepted.some((addr: string | { address?: string }) => {
+    const email = typeof addr === 'string' ? addr : addr.address;
+    return email?.toLowerCase() === recipientLower;
+  });
+
+  if (rejected.length > 0 || !recipientAccepted) {
+    throw new Error(formatSendMailError(result));
+  }
+
   return JSON.stringify(result);
 }
 

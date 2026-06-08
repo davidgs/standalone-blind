@@ -103,7 +103,7 @@ function Hello() {
           })
           .then((response) => {
             const newAtts = response.data;
-            console.log('newAtts: ', newAtts);
+            // console.log('newAtts: ', newAtts);
             setAllAttendees(SortPeople(newAtts as IPerson[]) as IPerson[]);
           })
           .catch((error) => {
